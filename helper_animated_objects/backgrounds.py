@@ -1,2 +1,7 @@
-import manimlib as manim    
-bg = manim.FullScreenRectangle(fill_color=manim.BLACK, fill_opacity=1, stroke_width=0)
+import manimlib as manim
+from constants.colors import main_background_color
+
+
+main_background = manim.FullScreenRectangle(
+    fill_color=main_background_color, fill_opacity=1, stroke_width=0
+)

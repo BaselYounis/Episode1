@@ -1,1 +1,1 @@
-from .introduction import introduction_scene
+from . import introduction # type: ignore
