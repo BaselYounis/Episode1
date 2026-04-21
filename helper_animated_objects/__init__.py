@@ -1,1 +1,1 @@
-from . import backgrounds # type: ignore
+from . import general_objects # type: ignore
