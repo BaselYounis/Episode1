@@ -1,11 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .ann_section import ann_scene
-
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 import manimlib as m
+from .ann_section import ann_section
 
 
 def basmallah_scene(s: MainTheatreScene) -> None:
@@ -85,7 +84,13 @@ def introduction_scene(s: MainTheatreScene) -> None:
     s.wait_for_button()
     llm_group = m.VGroup(llm_label, llm_rects_group)
     vision_group = m.VGroup(vision_label, vision_rects_group)
-    network_with_text = ann_scene(s)
+    network_with_text = ann_section(s)
     s.wait_for_button()
-    s.play(m.AnimationGroup(m.FadeOut(llm_group), m.FadeOut(vision_group)))
-    s.play(m.FadeOut(network_with_text))
+    s.play(
+        m.AnimationGroup(
+            m.FadeOut(llm_group, m.LEFT),
+            m.FadeOut(vision_group, m.RIGHT),
+            m.FadeOut(network_with_text, m.UP),
+            run_time=0.8,
+        )
+    )

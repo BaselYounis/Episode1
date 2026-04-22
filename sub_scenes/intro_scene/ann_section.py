@@ -7,8 +7,7 @@ import manimlib as m
 import numpy as np
 
 
-
-def ann_scene(s: MainTheatreScene) -> m.VGroup:
+def ann_section(s: MainTheatreScene) -> m.VGroup:
     line = m.Line(
         start=m.ORIGIN,
         end=m.ORIGIN,
@@ -67,8 +66,8 @@ def ann_scene(s: MainTheatreScene) -> m.VGroup:
         *[m.ShowCreation(circle) for circle in network], lag_ratio=0.2
     )
     s.wait_for_button()
-    s.play(circles_creation_anim,text_anim, run_time=1.5)
+    s.play(circles_creation_anim, text_anim, run_time=1.5)
     s.play(lines_anim_group, run_time=1)
     highlight = m.SurroundingRectangle(network_with_text, color=m.YELLOW)
-    s.play(m.ShowPassingFlash(highlight),run_time = 1.5,rate_func= m.smooth)
+    s.play(m.ShowPassingFlash(highlight), run_time=1.5, rate_func=m.smooth)
     return network_with_text
