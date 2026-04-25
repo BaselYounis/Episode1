@@ -1,14 +1,19 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from helpers import mixed_tex_parser
+
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 import manimlib as m
 
 
 class Set:
-    def __init__(self, elements: list[str], set_name: str):
+    def __init__(
+        self, elements: list[str], set_name: str, is_left_set: bool = True
+    ) -> None:
         self.oval = self.create_oval_mobject()
+        self.is_left_set = is_left_set
         self.elements = self.create_elements_mobject(elements)
         self.set_name = self.create_set_name_mobject(set_name)
         self.mobject = m.VGroup(self.oval, self.elements, self.set_name)
@@ -28,6 +33,13 @@ class Set:
     def create_elements_mobject(self, elements: list[str]) -> m.VGroup:
         elements = m.VGroup(
             *[m.Text(text, font_size=30, font="Century") for text in elements]
+        )
+        dots = m.VGroup(*[m.Dot(radius=0.02) for _ in elements])
+        for element, dot in zip(elements, dots):
+            direction = m.RIGHT if self.is_left_set else m.LEFT
+            dot.next_to(element, direction, buff=0.1)
+        elements = m.VGroup(
+            *[m.VGroup(dot, element) for dot, element in zip(dots, elements)]
         )
         elements.arrange(m.DOWN, buff=0.5)
         elements.move_to(self.oval.get_center())
@@ -55,60 +67,31 @@ class Set:
 # a function from a set X to a set Y assigns to each element of X exactly one element of Y The set X is called the domain of the function and the set Y is called the codomain of the function
 def set_to_set_section(s: MainTheatreScene) -> None:
     font = "Century"
-    fs = 28
     narrative_text = m.Text("Formal definition of a function", font=font, font_size=36)
     narrative_text.to_edge(m.UP, buff=0.2)
-    formal_def_of_function = (
-        m.VGroup(
-            m.Text("A function", font=font, font_size=fs),
-            m.Tex(r"\mathrm{f}", font_size=fs + 4).set_color(m.YELLOW),
-            m.Text("from a set", font=font, font_size=fs),
-            m.Tex(r"\mathrm{X}", font_size=fs + 4).set_color(m.BLUE),
-            m.Text("to a set", font=font, font_size=fs),
-            m.Tex(r"\mathrm{Y}", font_size=fs + 4).set_color(m.RED),
-            m.Text("assigns to each element of", font=font, font_size=fs),
-            m.Tex(r"\mathrm{X}", font_size=fs + 4).set_color(m.BLUE),
-            m.Text("exactly one element of", font=font, font_size=fs),
-            m.Tex(r"\mathrm{Y}", font_size=fs + 4).set_color(m.RED),
-        )
-        .arrange(m.RIGHT, buff=0.15)
-        .next_to(narrative_text, m.DOWN, buff=0.5)
-        .to_edge(m.LEFT, buff=0.05)
+    function_def = mixed_tex_parser.parse_tex_text(
+        text=r"""
+        A function $f$ from a set $X$ to set $Y$ assigns exactly one element of $Y$ to each element of $X$\nd
+        We denote a function $f$ from $X$ to $Y$ as $f: X \to Y$\nd
+        and we write $f(x) = y$ if $y$ is the unique element of $Y$ that is assigned to element $x \in X$
+        """,
     )
-    denoted_as = (
-        m.VGroup(
-            m.Text("We denote this by writing", font=font, font_size=fs),
-            m.VGroup(
-                m.Tex(r"\mathrm{f}", font_size=fs + 4).set_color(m.YELLOW),
-                m.Tex(r":", font_size=fs + 4),
-                m.Tex(r"\mathrm{X}", font_size=fs + 4).set_color(m.BLUE),
-                m.Tex(r"\to", font_size=fs + 4),
-                m.Tex(r"\mathrm{Y}", font_size=fs + 4).set_color(m.RED),
-            ).arrange(m.RIGHT, buff=0.15),
-        )
-        .arrange(m.RIGHT, buff=0.15)
-        .next_to(formal_def_of_function, m.DOWN, buff=0.15)
-        .to_edge(m.LEFT, buff=0.05)
+    mixed_tex_parser.map_tex_to_color(
+        function_def, {"f": m.PINK, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}
     )
-    and_we_write = (
-        m.VGroup(
-            m.Text("and we write", font=font, font_size=fs),
-            m.Tex(r"f(x)=y", font_size=fs + 4).set_color_by_tex_to_color_map(
-                {"f": m.YELLOW, "x": m.BLUE, "y": m.RED}
-            ),
-        )
-        .arrange(m.RIGHT, buff=0.15)
-        .next_to(denoted_as, m.DOWN, buff=0.15)
-        .to_edge(m.LEFT, buff=0.05)
-    )
-    some_random_text = m.Tex("x^2","\  and \ +","1", font_size=fs + 4).set_color_by_tex_to_color_map(
-        {"x": m.BLUE}
-    ).next_to(and_we_write, m.DOWN, buff=0.15).to_edge(m.LEFT, buff=0.05)
-    some_random_text[0].scale(2)
     line = m.Line(m.LEFT_SIDE, m.RIGHT_SIDE)
-    line.next_to(narrative_text, m.DOWN, buff=0.1)
-    s.play(m.FadeIn(narrative_text), m.FadeIn(line), lag_ratio=0.1)
-    s.play(m.Write(formal_def_of_function))
-    s.play(m.Write(denoted_as))
-    s.play(m.Write(and_we_write))
-    s.play(m.Write(some_random_text))
+    line.next_to(narrative_text, m.DOWN, buff=0.2)
+    function_def.next_to(line, m.DOWN, buff=0.5)
+    function_def.to_edge(m.LEFT, buff=0.1)
+    x_set = Set(["a", "b", "c"], "X")
+    x_set.oval.set_color(m.BLUE)
+    x_set.set_name.set_color(m.BLUE)
+    y_set = Set(["1", "2", "3"], "Y", is_left_set=False)
+    y_set.oval.set_color(m.RED)
+    y_set.set_name.set_color(m.RED)
+    set_group = m.VGroup(x_set.mobject, y_set.mobject)
+    set_group.arrange(m.RIGHT, buff=1.5)
+    set_group.next_to(function_def, m.DOWN, buff=0.6)
+    set_group.shift(m.RIGHT * 1.25)
+    s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
+    s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
