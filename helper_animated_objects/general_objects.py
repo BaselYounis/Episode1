@@ -1,5 +1,4 @@
-from random import random, seed
-import numpy as np
+
 import manimlib as manim
 from constants.colors import main_background_color
 

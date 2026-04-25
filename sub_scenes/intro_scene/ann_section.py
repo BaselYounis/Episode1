@@ -57,17 +57,32 @@ def ann_section(s: MainTheatreScene) -> m.VGroup:
                 lines_creation_anim.append(m.ShowCreation(new_line))
 
     network_group = m.VGroup(network, *lines)
+    network_group.scale(1.5)
     ann_text = m.Text("Artificial Neural Network", font_size=24, font="Century")
     ann_text.next_to(network_group, m.UP, buff=0.5)
+    narrative_text_1 = m.Text(
+        "But what is an artificial neural network?", font_size=24, font="Century"
+    )
+    narrative_text_2 = m.Text(
+        "The artifical neural network is just a function!",
+        font_size=24,
+        font="Century",
+    )
+    narrative_text_1.next_to(network_group, m.DOWN, buff=0.5)
+    narrative_text_2.next_to(narrative_text_1, m.DOWN, buff=0.5)
     network_with_text = m.VGroup(network_group, ann_text)
-    text_anim = m.Write(ann_text)
     lines_anim_group = m.AnimationGroup(*lines_creation_anim, lag_ratio=0)
     circles_creation_anim = m.AnimationGroup(
         *[m.ShowCreation(circle) for circle in network], lag_ratio=0.2
     )
     s.wait_for_button()
-    s.play(circles_creation_anim, text_anim, run_time=1.5)
+    s.play(circles_creation_anim, m.Write(ann_text), run_time=1.5)
     s.play(lines_anim_group, run_time=1)
     highlight = m.SurroundingRectangle(network_with_text, color=m.YELLOW)
     s.play(m.ShowPassingFlash(highlight), run_time=1.5, rate_func=m.smooth)
-    return network_with_text
+    s.wait_for_button()
+    s.play(m.Write(narrative_text_1), run_time=1)
+    s.wait_for_button()
+    s.play(m.Write(narrative_text_2), run_time=1)
+    scene_mobjects = m.VGroup(network_with_text, narrative_text_1, narrative_text_2)
+    return scene_mobjects
