@@ -1,0 +1,38 @@
+But what is a function ? **show this text on the screen then fade out**
+
+**show the formal definition of the function**
+a function is a mapping between two sets such that each element from the set X (called the function domain) maps
+to one and only one element of set Y (called the renage)
+
+**show the x domain set**
+for example we have the set a , b, c
+
+**show the y domain set**
+ mapping to the set  1 , 2 , 3 
+
+
+**show an arrow from a,b pointing to the element 1**
+**highlight with a check mark that this is a valid function**
+for example a,b can map to the same element... for example : 1
+
+**show an arrow from a pointing to the element 1 , 2**
+**highlight with a X mark that this is a invalid function**
+but also for example a cannot point to 1 , 2 at the same this violates the definition of the function
+
+
+
+
+**transform the elements of both sets to match the given example below**
+what this definition says is that functions are a mathematical tool that basically models real world 
+because for example when measuring the velocity of a vehicle  
+
+the type of elements of each set is arbitrary... we might have a mapping between:
+
+1- two sets of real numbers (ordinary single variable functions)
+2- a set of vectors and a set of real numbers (multi variable functions)
+3- a set of real numbers and a set of vectors (vector functions also known as parametric curves)
+4- a set of vectors to a set of vectors (vector fields)
+5- a set of sets to a set of sets (sorting algorithms...)
+
+
+

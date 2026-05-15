@@ -8,7 +8,41 @@ if TYPE_CHECKING:
 import manimlib as m
 
 
-class Set:
+
+# a function from a set X to a set Y assigns to each element of X exactly one element of Y The set X is called the domain of the function and the set Y is called the codomain of the function
+def set_to_set_section(s: MainTheatreScene) -> None:
+    font = "Century"
+    narrative_text = m.Text("Formal definition of a function", font=font, font_size=36)
+    narrative_text.to_edge(m.UP, buff=0.2)
+    function_def = mixed_tex_parser.convert_tex_to_vgroup(
+        text=r"""
+        A function $f$ from a set $X$ to set $Y$ assigns exactly one element of $Y$ to each element of $X$\nd
+        We denote a function $f$ from $X$ to $Y$ as $f: X \to Y$\nd
+        and we write $f(x) = y$ if $y$ is the unique element of $Y$ that is assigned to element $x \in X$
+        """,
+    )
+    mixed_tex_parser.map_tex_to_color(
+        function_def, {"f": m.PINK, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}
+    )
+    line = m.Line(m.LEFT_SIDE, m.RIGHT_SIDE)
+    line.next_to(narrative_text, m.DOWN, buff=0.2)
+    function_def.next_to(line, m.DOWN, buff=0.5)
+    function_def.to_edge(m.LEFT, buff=0.1)
+    x_set = Set(["a", "b", "c"], "X")
+    x_set.oval.set_color(m.BLUE)
+    x_set.set_name.set_color(m.BLUE)
+    y_set = Set(["1", "2", "3"], "Y", is_left_set=False)
+    y_set.oval.set_color(m.RED)
+    y_set.set_name.set_color(m.RED)
+    set_group = m.VGroup(x_set.mobject, y_set.mobject)
+    set_group.arrange(m.RIGHT, buff=1.5)
+    set_group.next_to(function_def, m.DOWN, buff=0.6)
+    set_group.shift(m.RIGHT * 1.25)
+    s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
+    s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
+
+
+    class Set:
     def __init__(
         self, elements: list[str], set_name: str, is_left_set: bool = True
     ) -> None:
@@ -64,34 +98,39 @@ class Set:
         return m.Transform(self.elements, new_elements)
 
 
-# a function from a set X to a set Y assigns to each element of X exactly one element of Y The set X is called the domain of the function and the set Y is called the codomain of the function
-def set_to_set_section(s: MainTheatreScene) -> None:
-    font = "Century"
-    narrative_text = m.Text("Formal definition of a function", font=font, font_size=36)
-    narrative_text.to_edge(m.UP, buff=0.2)
-    function_def = mixed_tex_parser.parse_tex_text(
-        text=r"""
-        A function $f$ from a set $X$ to set $Y$ assigns exactly one element of $Y$ to each element of $X$\nd
-        We denote a function $f$ from $X$ to $Y$ as $f: X \to Y$\nd
-        and we write $f(x) = y$ if $y$ is the unique element of $Y$ that is assigned to element $x \in X$
-        """,
-    )
-    mixed_tex_parser.map_tex_to_color(
-        function_def, {"f": m.PINK, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}
-    )
-    line = m.Line(m.LEFT_SIDE, m.RIGHT_SIDE)
-    line.next_to(narrative_text, m.DOWN, buff=0.2)
-    function_def.next_to(line, m.DOWN, buff=0.5)
-    function_def.to_edge(m.LEFT, buff=0.1)
-    x_set = Set(["a", "b", "c"], "X")
-    x_set.oval.set_color(m.BLUE)
-    x_set.set_name.set_color(m.BLUE)
-    y_set = Set(["1", "2", "3"], "Y", is_left_set=False)
-    y_set.oval.set_color(m.RED)
-    y_set.set_name.set_color(m.RED)
-    set_group = m.VGroup(x_set.mobject, y_set.mobject)
-    set_group.arrange(m.RIGHT, buff=1.5)
-    set_group.next_to(function_def, m.DOWN, buff=0.6)
-    set_group.shift(m.RIGHT * 1.25)
-    s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
-    s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
+def create_arrows(x_set: Set, y_set: Set, buff: float = 0) -> m.VGroup:
+    arrows = []
+    for x_point, y_point in zip(x_set.elements, y_set.elements):
+        direction = m.normalize(y_point[0].get_center() - x_point[0].get_center())
+        start_point = x_point[0].get_center() + direction * buff
+        end_point = y_point[0].get_center() - direction * buff
+        arrow = m.CurvedArrow(
+            start_point,
+            end_point,
+            angle=-m.TAU / 4,
+        )
+        arrow.set_color(m.PINK)
+        arrow.set_stroke(width=1.75)
+        arrow.tip.scale(0.5)
+        arrows.append(arrow)
+    return m.VGroup(*arrows)
+
+
+    # script: show an arrow from a,b pointing to the element 1
+    # elements[0] = a, elements[1] = b  →  y_set.elements[0] = 1
+    def make_arrow(from_elem, to_elem) -> m.CurvedArrow:
+        direction = m.normalize(to_elem[0].get_center() - from_elem[0].get_center())
+        arrow = m.CurvedArrow(
+            from_elem[0].get_center(),
+            to_elem[0].get_center(),
+            angle=-m.TAU / 4,
+        )
+        arrow.set_color(m.PINK)
+        arrow.set_stroke(width=1.75)
+        arrow.tip.scale(0.5)
+        return arrow
+
+    arrow_a_to_1 = make_arrow(x_set.elements[0], y_set.elements[0])  # a → 1
+    arrow_b_to_1 = make_arrow(x_set.elements[1], y_set.elements[0])  # b → 1
+    s.play(m.ShowCreation(arrow_a_to_1), m.ShowCreation(arrow_b_to_1))
+    

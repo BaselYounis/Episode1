@@ -2,7 +2,9 @@ import re
 import manimlib as m
 
 
-def parse_tex_text(text: str, font: str = "Century", font_size: int = 28) -> m.VGroup:
+def convert_tex_to_vgroup(
+    text: str, font: str = "Century", font_size: int = 28
+) -> m.VGroup:
     segments = re.split(r"\\nd", text)
     parsed_segments = []
     for segment in segments:
