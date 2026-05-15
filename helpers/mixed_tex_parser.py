@@ -19,7 +19,7 @@ def fix_text_horzintal_alignment(group: m.VGroup) -> None:
     for part in group:
         current_part_width = part.get_width()
         displacement = (max_width - current_part_width) / 2
-        part.shift(m.LEFT * displacement)
+        part.shift(m.LEFT * displacement) # type: ignore
 
 
 def parse_tex_row(text: str, font: str = "Century", font_size=28) -> m.VGroup:

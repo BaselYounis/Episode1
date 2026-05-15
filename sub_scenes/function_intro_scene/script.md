@@ -6,6 +6,7 @@ But what is a function?
 
 ---
 
+
 > 🎬 show the formal definition of the function
 
 A function is a mapping between two sets such that each element from the set X (called the function domain) maps to one and only one element of set Y (called the range)
@@ -34,13 +35,14 @@ For example **a**, **b** can map to the same element... for example : **1**
 
 > ❌ highlight with a X mark that this is an invalid function
 
-But also for example **a** cannot point to **1 , 2** at the same time — this violates the definition of the function
+But also for example **a** cannot point to **1 , 2** at the same time — this violates the definition of the function 
 
 ---
 
 > 🎬 transform the elements of both sets to match the given example below
 
-What this definition says is that functions are a mathematical tool that basically models the real world, because for example when measuring the velocity of a vehicle...
+What this definition says is that functions are a mathematical tool that basically models the real world, because for example when measuring the velocity of a vehicle... 
+> 🎬 show in the middle the tex f(5s) = 60km/h and f(25s) = 60km/h 
 
 The type of elements of each set is arbitrary. We might have a mapping between:
 
