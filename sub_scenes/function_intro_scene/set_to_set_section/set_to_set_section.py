@@ -49,3 +49,4 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
     valid_function_sub_section(s, x_set, y_set)
     invalid_function_sub_section(s, x_set, y_set)
+    

@@ -10,18 +10,19 @@ import manimlib as m
 
 
 def invalid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> None:
+    #the second 0 index to point to the dot now the actual text
     arrow_a_to_1 = make_arrow(
-        x_set.elements[0], y_set.elements[0], upward=True
+        x_set.elements[0][0], y_set.elements[0][0], upward=True
     )  # a → 1
     arrow_a_to_2 = make_arrow(
-        x_set.elements[0], y_set.elements[1], upward=False
+        x_set.elements[0][0], y_set.elements[1][0], upward=False
     )  # a → 2
     arrow_b_to_2 = make_arrow(
-        x_set.elements[1], y_set.elements[1], upward=True
+        x_set.elements[1][0], y_set.elements[1][0], upward=True
     )  # b → 2
     arrow_c_to_3 = make_arrow(
-        x_set.elements[2], y_set.elements[2], upward=False
-    )  # c → 3
+        x_set.elements[2][0], y_set.elements[2][0], upward=False
+    )  # c → 3 
     invalid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
         r"""invalid function $\times$"""
     )

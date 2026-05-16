@@ -16,15 +16,16 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
     mixed_tex_parser.map_tex_to_color(valid_function_text, {r"\checkmark": m.GREEN})  # type: ignore
     sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
     valid_function_text.next_to(sets_center, m.UP, buff=2)
+    #the second 0 index to point to the dot now the actual text
     arrow_a_to_1 = make_arrow(
-        x_set.elements[0], y_set.elements[0], upward=True
+        x_set.elements[0][0], y_set.elements[0][0], upward=True
     )  # a → 1
     arrow_b_to_2 = make_arrow(
-        x_set.elements[1], y_set.elements[1], upward=True
+        x_set.elements[1][0], y_set.elements[1][0], upward=True
     )  # b → 2
 
     arrow_c_to_2 = make_arrow(
-        x_set.elements[2], y_set.elements[1], upward=False
+        x_set.elements[2][0], y_set.elements[1][0], upward=False
     )  # c → 2
     valid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
         r"""valid function $\checkmark$"""

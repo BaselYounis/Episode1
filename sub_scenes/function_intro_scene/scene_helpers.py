@@ -1,3 +1,4 @@
+import numpy as np
 import manimlib as m
 
 
@@ -43,7 +44,6 @@ class Set:
         set_oval_text.next_to(self.oval, m.UP)
         return set_oval_text
 
-
     def get_creation_animation(self) -> m.AnimationGroup:
         text_creation_anim = m.AnimationGroup(
             *[m.Write(text) for text in self.elements],
@@ -59,14 +59,24 @@ class Set:
 
 
 def make_arrow(
-    from_elem, to_elem, buff: float = 0, stroke_width: float = 2.0, upward: bool = False
+    from_elem,
+    to_elem,
+    buff: float = 0.1,
+    stroke_width: float = 2.0,
+    upward: bool = False,
 ) -> m.CurvedArrow:
-    angle_magnitude = m.PI / 4
-    arc_angle = -angle_magnitude if upward else angle_magnitude
-    arrow = m.CurvedArrow(
-        from_elem[0].get_center(), to_elem[0].get_center(), angle=arc_angle
+    angle = m.PI / 4
+    arc_angle = -angle if upward else angle
+    angle_direction_vector = np.array(
+        [np.cos(arc_angle / 2), -1 * np.sin(arc_angle / 2), 0]
     )
+    start = from_elem.get_center() + angle_direction_vector * buff
+    end = to_elem.get_center()
+    arrow = m.CurvedArrow(start, end, angle=arc_angle)
     # Set the visual thickness of the arrow
     arrow.set_stroke(width=stroke_width)
     arrow.tip.scale(0.5)  # Adjust the size of the arrow tip
+    arrow.tip.shift(
+        angle_direction_vector * buff * np.array([-1, 1, 1])
+    )  
     return arrow
