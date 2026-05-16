@@ -66,7 +66,6 @@ def ann_section(s: MainTheatreScene) -> m.VGroup:
     narrative_text_2 = m.Text(
         "The artifical neural network is just a function!",
         font_size=24,
-        font="Century",
     )
     narrative_text_1.next_to(network_group, m.DOWN, buff=0.5)
     narrative_text_2.next_to(narrative_text_1, m.DOWN, buff=0.5)

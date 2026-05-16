@@ -3,7 +3,13 @@ from typing import TYPE_CHECKING
 
 
 from helpers import mixed_tex_parser
-from sub_scenes.function_intro_scene.scene_helpers import Set, make_arrow
+from sub_scenes.function_intro_scene.scene_helpers import Set 
+from sub_scenes.function_intro_scene.set_to_set_section.invalid_function_sub_section import (
+    invalid_function_sub_section,
+)
+from sub_scenes.function_intro_scene.set_to_set_section.valid_function_sub_section import (
+    valid_function_sub_section,
+)
 
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
@@ -41,52 +47,5 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     set_group.shift(m.RIGHT * 1.25)  # pyright: ignore[reportOperatorIssue]
     s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
     s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
-    arrow_a_to_1 = make_arrow(
-        x_set.elements[0], y_set.elements[0], upward=True
-    )  # a → 1
-    arrow_a_to_2 = make_arrow(
-        x_set.elements[0], y_set.elements[1], upward=False
-    )  # a → 2
-    arrow_b_to_2 = make_arrow(
-        x_set.elements[1], y_set.elements[1], upward=True
-    )  # b → 2
-
-    arrow_c_to_2 = make_arrow(
-        x_set.elements[2], y_set.elements[1], upward=False
-    )  # c → 2
-    arrow_c_to_3 = make_arrow(
-        x_set.elements[2], y_set.elements[2], upward=False
-    )  # c → 3
-    valid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
-        r"""valid function $\checkmark$"""
-    )
-    invalid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
-        r"""invalid function $\times$"""
-    )
-    mixed_tex_parser.map_tex_to_color(invalid_function_text, {r"\times": m.RED})  # type: ignore
-    mixed_tex_parser.map_tex_to_color(valid_function_text, {r"\checkmark": m.GREEN})  # type: ignore
-    sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
-    valid_function_text.next_to(sets_center, m.UP, buff=2)
-    invalid_function_text.next_to(sets_center, m.UP, buff=2)
-
-    s.play(
-        m.ShowCreation(arrow_a_to_1),
-        m.ShowCreation(arrow_b_to_2),
-        m.ShowCreation(arrow_c_to_2),
-    )
-    s.play(m.FadeIn(valid_function_text, shift=m.UP * 0.5))
-    s.wait_for_button()
-    s.play(
-        m.FadeOut(valid_function_text, shift=m.UP * 0.5),
-        m.FadeOut(arrow_a_to_1),
-        m.FadeOut(arrow_b_to_2),
-        m.FadeOut(arrow_c_to_2),
-    )
-    s.play(
-        m.ShowCreation(arrow_a_to_2),
-        m.ShowCreation(arrow_a_to_1),
-        m.ShowCreation(arrow_b_to_2),
-        m.ShowCreation(arrow_c_to_3),
-    )
-    s.play(m.FadeIn(invalid_function_text, shift=m.UP * 0.5))
-    s.wait_for_button()
+    valid_function_sub_section(s, x_set, y_set)
+    invalid_function_sub_section(s, x_set, y_set)

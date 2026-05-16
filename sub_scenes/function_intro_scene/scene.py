@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .set_to_set_section import set_to_set_section
+from .set_to_set_section.set_to_set_section import set_to_set_section
 
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 import manimlib as m
-from .ann_section import ann_section
+from .ann_section.ann_section import ann_section
 
 
 def basmallah_scene(s: MainTheatreScene) -> None:
