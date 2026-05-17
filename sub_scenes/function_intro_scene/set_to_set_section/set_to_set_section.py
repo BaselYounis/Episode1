@@ -45,7 +45,7 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     y_set.oval.set_color(m.RED)
     y_set.set_name.set_color(m.RED)
     set_group = m.VGroup(x_set.mobject, y_set.mobject)
-    set_group.arrange(m.RIGHT, buff=2.5)
+    set_group.arrange(m.RIGHT, buff=4)
     set_group.next_to(function_def, m.DOWN, buff=0.6)
     set_group.shift(m.RIGHT * 1.25) 
     s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
@@ -53,6 +53,6 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     valid_function_sub_section(s, x_set, y_set)
     s.wait_for_button()
     invalid_function_sub_section(s, x_set, y_set)
-    s.wait_for_button()
+    # s.wait_for_button()
     car_velocity_example_sub_section(s, x_set, y_set)
     

@@ -42,7 +42,12 @@ But also for example **a** cannot point to **1 , 2** at the same time — this v
 > 🎬 transform the elements of both sets to match the given example below
 
 What this definition says is that functions are a mathematical tool that basically models the real world, because for example when measuring the velocity of a vehicle... 
-> 🎬 show in the middle the tex f(0s) = 0km/h and f(5s) = 0km/h f(10s) = 20km/h 
+> 🎬 show in the middle the tex f(0s) = 0km/h and f(5s) = 0km/h f(10s) = 20km/h
+> 🎬 highlight that this makes sense with a green checkmark
+
+> 🎬 show now the invalid arrows of the function and show on the middle f(0s) = 0km/h & f(0s) = 5km/h
+> 🎬 highlight that this does not make sense with an red X mark
+
 
 
 

@@ -12,12 +12,12 @@ import manimlib as m
 def car_velocity_example_sub_section(
     s: MainTheatreScene, x_set: Set, y_set: Set
 ) -> None:
-    f_of_0s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(0s)=0km/s$")
-    f_of_5s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(5s)=0km/s$")
-    f_of_10s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(10s)=20km/s$")
-    mixed_tex_parser.map_tex_to_color(f_of_0s, {"f": m.YELLOW_A, "0s": m.BLUE, "0km/s": m.RED})  # type: ignore
-    mixed_tex_parser.map_tex_to_color(f_of_5s, {"f": m.YELLOW_A, "5s": m.BLUE, "0km/s": m.RED})  # type: ignore
-    mixed_tex_parser.map_tex_to_color(f_of_10s, {"f": m.YELLOW_A, "10s": m.BLUE, "20km/s": m.RED})  # type: ignore
+    f_of_0s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(0s)=0km/h$")
+    f_of_5s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(5s)=0km/h$")
+    f_of_10s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(10s)=20km/h$")
+    mixed_tex_parser.map_tex_to_color(f_of_0s, {"f": m.YELLOW_A, "0s": m.BLUE, "0km/h": m.RED})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_5s, {"f": m.YELLOW_A, "5s": m.BLUE, "0km/h": m.RED})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_10s, {"f": m.YELLOW_A, "10s": m.BLUE, "20km/h": m.RED})  # type: ignore
     x_set_anim = x_set.transform_elements(["0s", "5s", "10s"])
     y_set_anim = y_set.transform_elements(["0km/h", "20km/h", "40km/h"])
     set_anim_group = m.AnimationGroup(x_set_anim, y_set_anim)
@@ -38,3 +38,4 @@ def car_velocity_example_sub_section(
     )
     s.wait_for_button()
     s.play(m.FadeIn(f_of_5s, shift=m.UP * 0.5))
+    

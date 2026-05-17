@@ -45,3 +45,4 @@ def invalid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) ->
         m.FadeOut(arrow_b_to_2),
         m.FadeOut(arrow_c_to_3),
     )
+    s.wait_for_button()
