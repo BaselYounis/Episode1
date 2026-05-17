@@ -42,7 +42,9 @@ But also for example **a** cannot point to **1 , 2** at the same time — this v
 > 🎬 transform the elements of both sets to match the given example below
 
 What this definition says is that functions are a mathematical tool that basically models the real world, because for example when measuring the velocity of a vehicle... 
-> 🎬 show in the middle the tex f(5s) = 60km/h and f(25s) = 60km/h 
+> 🎬 show in the middle the tex f(0s) = 0km/h and f(5s) = 0km/h f(10s) = 20km/h 
+
+
 
 The type of elements of each set is arbitrary. We might have a mapping between:
 

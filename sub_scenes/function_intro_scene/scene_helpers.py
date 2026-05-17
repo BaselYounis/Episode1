@@ -23,7 +23,6 @@ class Set:
         )
         new_oval.rotate(m.PI / 2)
         return new_oval
-
     def create_elements_mobject(self, elements: list[str]) -> m.VGroup:
         new_elements = m.VGroup(
             *[m.Text(text, font_size=30, font="Century") for text in elements]
@@ -70,10 +69,11 @@ def make_arrow(
     angle_direction_vector = np.array(
         [np.cos(arc_angle / 2), -1 * np.sin(arc_angle / 2), 0]
     )
-    start = from_elem.get_center() + angle_direction_vector * buff
-    end = to_elem.get_center()
+    start = from_elem[0].get_center() + angle_direction_vector * buff
+    end = to_elem[0].get_center()
     arrow = m.CurvedArrow(start, end, angle=arc_angle)
     # Set the visual thickness of the arrow
+    arrow.set_color(m.YELLOW_A)
     arrow.set_stroke(width=stroke_width)
     arrow.tip.scale(0.5)  # Adjust the size of the arrow tip
     arrow.tip.shift(

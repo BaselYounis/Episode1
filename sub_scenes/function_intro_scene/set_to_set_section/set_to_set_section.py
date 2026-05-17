@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 
 
 from helpers import mixed_tex_parser
-from sub_scenes.function_intro_scene.scene_helpers import Set 
+from sub_scenes.function_intro_scene.scene_helpers import Set
+from sub_scenes.function_intro_scene.set_to_set_section.car_velocity_example_sub_section import (
+    car_velocity_example_sub_section,
+)
 from sub_scenes.function_intro_scene.set_to_set_section.invalid_function_sub_section import (
     invalid_function_sub_section,
 )
@@ -29,7 +32,7 @@ def set_to_set_section(s: MainTheatreScene) -> None:
         """,
     )
     mixed_tex_parser.map_tex_to_color(
-        function_def, {"f": m.PINK, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}  # type: ignore
+        function_def, {"f": m.YELLOW_A, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}  # type: ignore
     )
     line = m.Line(m.LEFT_SIDE, m.RIGHT_SIDE)
     line.next_to(narrative_text, m.DOWN, buff=0.2)
@@ -44,9 +47,12 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     set_group = m.VGroup(x_set.mobject, y_set.mobject)
     set_group.arrange(m.RIGHT, buff=2.5)
     set_group.next_to(function_def, m.DOWN, buff=0.6)
-    set_group.shift(m.RIGHT * 1.25)  # pyright: ignore[reportOperatorIssue]
+    set_group.shift(m.RIGHT * 1.25) 
     s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
     s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
     valid_function_sub_section(s, x_set, y_set)
+    s.wait_for_button()
     invalid_function_sub_section(s, x_set, y_set)
+    s.wait_for_button()
+    car_velocity_example_sub_section(s, x_set, y_set)
     
