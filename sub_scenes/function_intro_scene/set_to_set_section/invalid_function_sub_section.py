@@ -11,6 +11,10 @@ import manimlib as m
 
 def invalid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> None:
     # the second 0 index to point to the dot now the actual text
+    x_set_anim = x_set.transform_elements([ 
+       'a', 'b', 'c' 
+    ])
+    
     arrow_a_to_1 = make_arrow(
         x_set.elements[0], y_set.elements[0], upward=True
     )  # a → 1
@@ -26,10 +30,13 @@ def invalid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) ->
     invalid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
         r"""invalid function $\times$"""
     )
+    
+
     mixed_tex_parser.map_tex_to_color(invalid_function_text, {r"\times": m.RED})  # type: ignore
     sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
     invalid_function_text.next_to(sets_center, m.UP, buff=2)
-
+    
+    s.play(x_set_anim)  
     s.play(
         m.ShowCreation(arrow_a_to_2),
         m.ShowCreation(arrow_a_to_1),

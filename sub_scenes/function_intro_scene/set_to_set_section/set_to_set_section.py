@@ -38,7 +38,7 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     line.next_to(narrative_text, m.DOWN, buff=0.2)
     function_def.next_to(line, m.DOWN, buff=0.5)
     function_def.to_edge(m.LEFT, buff=0.1)
-    x_set = Set(["a", "b", "c"], "X")
+    x_set = Set(["a", "b", "c","d"], "X")
     x_set.oval.set_color(m.BLUE)
     x_set.set_name.set_color(m.BLUE)
     y_set = Set(["1", "2", "3"], "Y", is_left_set=False)

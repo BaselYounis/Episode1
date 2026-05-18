@@ -36,6 +36,7 @@ class Set:
         )
         new_elements.arrange(m.DOWN, buff=0.5)
         new_elements.move_to(self.oval.get_center())
+        
         return new_elements
 
     def create_set_name_mobject(self, set_name: str) -> m.Text:
@@ -54,8 +55,10 @@ class Set:
 
     def transform_elements(self, new_elements: list[str]) -> m.AnimationGroup:
         elements_mobjects = self.create_elements_mobject(new_elements)
-        return m.AnimationGroup(m.Transform(self.elements, elements_mobjects))
-
+        old_elements = self.elements
+        self.elements = elements_mobjects   
+        return m.AnimationGroup(m.ReplacementTransform(old_elements, self.elements))
+    
 
 def make_arrow(
     from_elem,

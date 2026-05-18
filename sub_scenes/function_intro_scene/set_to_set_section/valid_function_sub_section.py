@@ -27,6 +27,9 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
     arrow_c_to_2 = make_arrow(
         x_set.elements[2], y_set.elements[1], upward=False
     )  # c → 2
+    arrow_d_to_3 = make_arrow(
+        x_set.elements[3], y_set.elements[2], upward=False
+    )  # d → 3
     valid_function_text = mixed_tex_parser.convert_tex_to_vgroup(
         r"""valid function $\checkmark$"""
     )
@@ -34,9 +37,11 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
     sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
     valid_function_text.next_to(sets_center, m.UP, buff=2)
     s.play(
+
         m.ShowCreation(arrow_a_to_1),
         m.ShowCreation(arrow_b_to_2),
         m.ShowCreation(arrow_c_to_2),
+        m.ShowCreation(arrow_d_to_3),
     )
     s.play(m.FadeIn(valid_function_text, shift=m.UP * 0.5))
     s.wait_for_button()
@@ -45,4 +50,6 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
         m.FadeOut(arrow_a_to_1),
         m.FadeOut(arrow_b_to_2),
         m.FadeOut(arrow_c_to_2),
+        m.FadeOut(arrow_d_to_3),
     )
+    
