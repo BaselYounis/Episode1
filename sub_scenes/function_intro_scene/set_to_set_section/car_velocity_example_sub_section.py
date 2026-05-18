@@ -16,9 +16,9 @@ def car_velocity_example_sub_section(
     f_of_5s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(5s)=0km/h$")
     f_of_10s = mixed_tex_parser.convert_tex_to_vgroup(r"$f(10s)=20km/h$")
     checkmark_1 = mixed_tex_parser.convert_tex_to_vgroup(r"$\checkmark$")
-    mixed_tex_parser.map_tex_to_color(checkmark_1, {r"\checkmark": m.GREEN})  
+    mixed_tex_parser.map_tex_to_color(checkmark_1, {r"\checkmark": m.GREEN})
     checkmark_2 = checkmark_1.copy()
-    
+
     mixed_tex_parser.map_tex_to_color(f_of_0s, {"f": m.YELLOW_A, "0s": m.BLUE, "0km/h": m.RED})  # type: ignore
     mixed_tex_parser.map_tex_to_color(f_of_5s, {"f": m.YELLOW_A, "5s": m.BLUE, "0km/h": m.RED})  # type: ignore
     mixed_tex_parser.map_tex_to_color(f_of_10s, {"f": m.YELLOW_A, "10s": m.BLUE, "20km/h": m.RED})  # type: ignore
@@ -34,7 +34,7 @@ def car_velocity_example_sub_section(
     f_of_5s.next_to(f_of_0s, m.DOWN, buff=0.1)
     checkmark_1.next_to(f_of_0s, m.RIGHT, buff=0.5)
     checkmark_2.next_to(f_of_5s, m.RIGHT, buff=0.5)
-    
+
     s.play(set_anim_group)
     s.play(
         m.ShowCreation(arrow_a_to_1),
@@ -47,7 +47,5 @@ def car_velocity_example_sub_section(
     )
     s.wait_for_button()
     s.play(m.FadeIn(f_of_5s, shift=m.UP * 0.5))
-    s.play(m.FadeIn(checkmark_1, shift=m.UP * 0.5))
     s.wait_for_button()
-    s.play(m.FadeIn(checkmark_2, shift=m.UP * 0.5))
-    s.wait_for_button()
+    s.play(m.Write(checkmark_1), m.Write(checkmark_2))
