@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from ..scene_globals import f_color, x_color, y_color
 
 from helpers import mixed_tex_parser
 from sub_scenes.function_intro_scene.scene_helpers import Set, make_arrow
@@ -17,8 +18,8 @@ def car_velocity_example_sub_section(
     checkmark_1 = mixed_tex_parser.convert_tex_to_vgroup(r"$\checkmark$")
     mixed_tex_parser.map_tex_to_color(checkmark_1, {r"\checkmark": m.GREEN})
     checkmark_2 = checkmark_1.copy()
-    mixed_tex_parser.map_tex_to_color(f_of_0s, {"f": m.YELLOW_A, "0s": m.BLUE, "0km/h": m.RED})  # type: ignore
-    mixed_tex_parser.map_tex_to_color(f_of_5s, {"f": m.YELLOW_A, "5s": m.BLUE, "0km/h": m.RED})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_0s, {"f": f_color, "0s": x_color, "0km/h": y_color})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_5s, {"f": f_color, "5s": x_color, "0km/h": y_color})  # type: ignore
     x_set_anim = x_set.transform_elements(["0s", "5s", "10s", "15s"])
     y_set_anim = y_set.transform_elements(["0km/h", "20km/h", "40km/h"])
     set_anim_group = m.AnimationGroup(x_set_anim, y_set_anim)

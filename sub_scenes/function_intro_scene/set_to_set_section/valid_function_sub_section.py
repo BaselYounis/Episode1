@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
 from helpers import mixed_tex_parser
 from sub_scenes.function_intro_scene.scene_helpers import Set, make_arrow
 

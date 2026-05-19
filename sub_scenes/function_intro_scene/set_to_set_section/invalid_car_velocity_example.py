@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from ..scene_globals import f_color, x_color, y_color
 
 from helpers import mixed_tex_parser
 from sub_scenes.function_intro_scene.scene_helpers import Set, make_arrow
@@ -19,8 +20,8 @@ def invalid_car_velocity_example(s: MainTheatreScene, x_set: Set, y_set: Set) ->
     arrow_b_to_3 = make_arrow(x_set.elements[1], y_set.elements[2], upward=False)
     f_of_0s_to_1 = mixed_tex_parser.convert_tex_to_vgroup(r"$f(0s)=0km/h$")
     f_of_0s_to_2 = mixed_tex_parser.convert_tex_to_vgroup(r"$f(0s)=20km/h$")
-    mixed_tex_parser.map_tex_to_color(f_of_0s_to_1, {"f": m.YELLOW_A, "0s": m.BLUE, "0km/h": m.RED})  # type: ignore
-    mixed_tex_parser.map_tex_to_color(f_of_0s_to_2, {"f": m.YELLOW_A, "0s": m.BLUE, "20km/h": m.RED})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_0s_to_1, {"f": f_color, "0s": x_color, "0km/h": y_color})  # type: ignore
+    mixed_tex_parser.map_tex_to_color(f_of_0s_to_2, {"f": f_color, "0s": x_color, "20km/h": y_color})  # type: ignore
 
     sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
     f_of_0s_to_1.next_to(sets_center, m.UP, buff=2)

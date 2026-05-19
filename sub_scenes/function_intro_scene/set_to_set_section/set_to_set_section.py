@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-
+from ..scene_globals import f_color, x_color, y_color
 from helpers import mixed_tex_parser
 from sub_scenes.function_intro_scene.scene_helpers import Set
 from sub_scenes.function_intro_scene.set_to_set_section.invalid_car_velocity_example import (
@@ -35,18 +35,18 @@ def set_to_set_section(s: MainTheatreScene) -> None:
         """,
     )
     mixed_tex_parser.map_tex_to_color(
-        function_def, {"f": m.YELLOW_A, "X": m.BLUE, "x": m.BLUE, "y": m.RED, "Y": m.RED}  # type: ignore
+        function_def, {"f": f_color, "X": x_color, "x": x_color, "y": y_color, "Y": y_color}  # type: ignore
     )
     line = m.Line(m.LEFT_SIDE, m.RIGHT_SIDE)
     line.next_to(narrative_text, m.DOWN, buff=0.2)
     function_def.next_to(line, m.DOWN, buff=0.5)
     function_def.to_edge(m.LEFT, buff=0.1)
     x_set = Set(["a", "b", "c", "d"], "X")
-    x_set.oval.set_color(m.BLUE)
-    x_set.set_name.set_color(m.BLUE)
+    x_set.oval.set_color(x_color)
+    x_set.set_name.set_color(x_color)
     y_set = Set(["1", "2", "3"], "Y", is_left_set=False)
-    y_set.oval.set_color(m.RED)
-    y_set.set_name.set_color(m.RED)
+    y_set.oval.set_color(y_color)
+    y_set.set_name.set_color(y_color)
     set_group = m.VGroup(x_set.mobject, y_set.mobject)
     set_group.arrange(m.RIGHT, buff=4)
     set_group.next_to(function_def, m.DOWN, buff=0.6)

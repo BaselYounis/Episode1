@@ -63,6 +63,7 @@ class Set:
 def make_arrow(
     from_elem,
     to_elem,
+    color = m.YELLOW_A,
     buff: float = 0.1,
     stroke_width: float = 2.0,
     upward: bool = False,
@@ -76,7 +77,7 @@ def make_arrow(
     end = to_elem[0].get_center()
     arrow = m.CurvedArrow(start, end, angle=arc_angle)
     # Set the visual thickness of the arrow
-    arrow.set_color(m.YELLOW_A)
+    arrow.set_color(color)
     arrow.set_stroke(width=stroke_width)
     arrow.tip.scale(0.5)  # Adjust the size of the arrow tip
     arrow.tip.shift(
