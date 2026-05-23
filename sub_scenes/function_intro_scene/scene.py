@@ -16,3 +16,5 @@ def function_intro_scene(s: MainTheatreScene) -> None:
     s.wait_for_button()
     s.play(m.FadeOut(what_is_a_function_text))
     set_to_set_section(s)
+    
+    

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from ..scene_globals import f_color, x_color, y_color
 from helpers import mixed_tex_parser
-from sub_scenes.function_intro_scene.scene_helpers import Set
+from sub_scenes.function_intro_scene.scene_helpers import  Set
 from sub_scenes.function_intro_scene.set_to_set_section.invalid_car_velocity_example import (
     invalid_car_velocity_example,
 )

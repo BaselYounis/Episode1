@@ -45,3 +45,12 @@ def invalid_car_velocity_example(s: MainTheatreScene, x_set: Set, y_set: Set) ->
     s.wait_for_button()
     s.play(m.Write(x_mark_1), m.Write(x_mark_2))
     s.wait_for_button()
+    s.play(
+        m.FadeOut(x_mark_1),
+        m.FadeOut(x_mark_2),
+        m.FadeOut(f_of_0s_to_1),
+        m.FadeOut(f_of_0s_to_2),
+        m.FadeOut(arrow_a_to_1),
+        m.FadeOut(arrow_a_to_2),
+        m.FadeOut(arrow_b_to_3),
+    )
