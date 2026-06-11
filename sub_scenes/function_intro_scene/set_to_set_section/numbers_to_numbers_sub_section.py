@@ -1,5 +1,5 @@
 from __future__ import annotations
-from tkinter import Y
+
 from typing import TYPE_CHECKING
 
 import numpy
@@ -22,26 +22,41 @@ def quadratic_function_overlay(s: MainTheatreScene) -> None:
     formula.to_corner(m.UL)
     width = m.FRAME_WIDTH
     height = m.FRAME_HEIGHT
+
+    x_edge_number_to_exclude = int(width / 2)
+    y_edge_number_to_exclude = int(height / 2)
     plane = m.NumberPlane(
-        x_range=[-int(width / 2), int(width / 2)],
-        y_range=[-int(height / 2), int(height / 2)],
+        x_range=[-int(width / 2), int(width / 2), 1],
+        y_range=[-int(height / 2), int(height / 2), 1],
         background_line_style={
             "stroke_color": m.WHITE,
-            "stroke_width": 1,
-            "stroke_opacity": 0.5,
+            "stroke_width": 0.5,
+            "stroke_opacity": 0.25,
         },
         x_axis_config={
             "include_numbers": True,
-            "numbers_to_exclude": [0],
-            "decimal_number_config": {"font_size": 20},
+            "numbers_to_exclude": [
+                0,
+                x_edge_number_to_exclude,
+                -x_edge_number_to_exclude,
+            ],
         },
         y_axis_config={
             "include_numbers": True,
-            "numbers_to_exclude": [0],
-            "decimal_number_config": {"font_size": 20},
+            "numbers_to_exclude": [
+                0,
+                y_edge_number_to_exclude,
+                -y_edge_number_to_exclude,
+            ],
         },
     )
-    graph = plane.get_graph(lambda x: numpy.sin(x), color=f_color, stroke_width=0.5)
+    graph_x_limit = numpy.sqrt(height / 2)
+    graph = plane.get_graph(
+        lambda x: x**2,
+        x_range=[-graph_x_limit, graph_x_limit],
+        color=f_color,
+        stroke_width=1.5,
+    )
     scene_mobjects = m.VGroup(formula, plane, graph)
     overlay_box = SceneOverlayBox()
     overlay_box.put_mobject_inside(scene_mobjects)
@@ -73,3 +88,4 @@ def numbers_to_numbers_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) 
         m.ShowCreation(arrow_3_to_9),
         m.ShowCreation(arrow_4_to_16),
     )
+    quadratic_function_overlay(s)
