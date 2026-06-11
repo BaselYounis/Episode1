@@ -1,13 +1,54 @@
 from __future__ import annotations
+from tkinter import Y
 from typing import TYPE_CHECKING
 
-from sub_scenes.function_intro_scene.scene_helpers import Set, make_arrow
+import numpy
+
+from sub_scenes.function_intro_scene.scene_helpers import (
+    SceneOverlayBox,
+    Set,
+    make_arrow,
+)
 
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 import manimlib as m
+from ..scene_globals import f_color
 
- 
+
+def quadratic_function_overlay(s: MainTheatreScene) -> None:
+    formula = m.Tex(r"f(x) = x^2", font_size=24)
+    formula.set_color(m.BLUE)
+    formula.to_corner(m.UL)
+    width = m.FRAME_WIDTH
+    height = m.FRAME_HEIGHT
+    plane = m.NumberPlane(
+        x_range=[-int(width / 2), int(width / 2)],
+        y_range=[-int(height / 2), int(height / 2)],
+        background_line_style={
+            "stroke_color": m.WHITE,
+            "stroke_width": 1,
+            "stroke_opacity": 0.5,
+        },
+        x_axis_config={
+            "include_numbers": True,
+            "numbers_to_exclude": [0],
+            "decimal_number_config": {"font_size": 20},
+        },
+        y_axis_config={
+            "include_numbers": True,
+            "numbers_to_exclude": [0],
+            "decimal_number_config": {"font_size": 20},
+        },
+    )
+    graph = plane.get_graph(lambda x: numpy.sin(x), color=f_color, stroke_width=0.5)
+    scene_mobjects = m.VGroup(formula, plane, graph)
+    overlay_box = SceneOverlayBox()
+    overlay_box.put_mobject_inside(scene_mobjects)
+    s.play(m.FadeIn(overlay_box.mobject))
+    s.play(m.Write(formula))
+    s.play(m.ShowCreation(plane))
+    s.play(m.ShowCreation(graph))
 
 
 def numbers_to_numbers_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> None:

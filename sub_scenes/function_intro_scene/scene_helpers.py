@@ -3,13 +3,13 @@ import manimlib as m
 
 
 class SceneOverlayBox:
-    def __init__(self, FRAME_WIDTH: float = 5, FRAME_HEIGHT: float = 5) -> None:
-        self.FRAME_WIDTH = FRAME_WIDTH
-        self.FRAME_HEIGHT = FRAME_HEIGHT
+    def __init__(self, size = 0.4) -> None:
+        self.FRAME_WIDTH = size * m.FRAME_WIDTH
+        self.FRAME_HEIGHT = size * m.FRAME_HEIGHT
         self.color = m.BLACK
         self.box = m.Rectangle(
-            width=FRAME_WIDTH,
-            height=FRAME_HEIGHT,
+            width=self.FRAME_WIDTH,
+            height=self.FRAME_HEIGHT,
             color=self.color,
             fill_color=self.color,
             fill_opacity=1,
@@ -17,7 +17,7 @@ class SceneOverlayBox:
         self.mobjects_z_index = 10
         self.box.set_z_index(self.mobjects_z_index)
         vertical_displacement_vector = m.UP * (
-            m.FRAME_HEIGHT / 2 - self.FRAME_WIDTH / 2
+            m.FRAME_HEIGHT / 2 - self.FRAME_HEIGHT / 2
         )
         horizontal_displacement_vector = m.RIGHT * (
             m.FRAME_WIDTH / 2 - self.FRAME_WIDTH / 2
@@ -32,6 +32,7 @@ class SceneOverlayBox:
         self.origin = np.array([self.box.get_x(), self.box.get_y(), 0])
         self.horizontal_scaling_factor = self.FRAME_WIDTH / m.FRAME_WIDTH
         self.vertical_scaling_factor = self.FRAME_HEIGHT / m.FRAME_HEIGHT
+
     def put_mobject_inside(self, mobject: m.Mobject) -> None:
         mobject_delta_vector = mobject.get_center() - m.ORIGIN
         mobject_delta_vector_normalized = mobject_delta_vector / m.FRAME_WIDTH
@@ -40,7 +41,8 @@ class SceneOverlayBox:
         mobject.scale(self.horizontal_scaling_factor)
         mobject.move_to(mobject_new_position)
         self.z_index = self.mobjects_z_index + 1
-        mobject.set_z_index(self.z_index)
+        for part in mobject.get_family():
+            part.set_z_index(self.z_index)
 
 
 class Set:

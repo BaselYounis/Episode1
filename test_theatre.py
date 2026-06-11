@@ -1,0 +1,18 @@
+import manimlib as manim
+
+from sub_scenes.function_intro_scene.set_to_set_section.numbers_to_numbers_sub_section import quadratic_function_overlay
+from helper_animated_objects.general_objects import main_background
+
+class TestScene(manim.Scene):
+    def wait_for_button(self, message: str = "Press SPACE to continue ") -> None:
+        prompt = manim.Text(message, font_size=24)
+        prompt.set_color(manim.YELLOW_B)
+        prompt.to_corner(manim.DR)
+        self.add(prompt)
+        self.wait()
+        self.remove(prompt)
+
+    def construct(self):
+        self.presenter_mode = True
+        self.add(main_background)
+        quadratic_function_overlay(self)
