@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from helpers import mixed_tex_parser
-from sub_scenes.function_intro_scene.scene_helpers import SceneOverlayBox, Set, make_arrow
+from sub_scenes.function_intro_scene.scene_helpers import  Set, make_arrow
 
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
@@ -35,17 +35,8 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
     mixed_tex_parser.map_tex_to_color(valid_function_text, {r"\checkmark": m.GREEN})  # type: ignore
     sets_center = (x_set.mobject.get_center() + y_set.mobject.get_center()) / 2
     valid_function_text.next_to(sets_center, m.UP, buff=2)
-    overlay_box = SceneOverlayBox()
-    scene_mobjects = m.VGroup(
-        x_set.mobject,
-        y_set.mobject,
-        arrow_a_to_1,
-        arrow_b_to_2,
-        arrow_c_to_2,
-        arrow_d_to_3,
-        valid_function_text,
-    )
-    overlay_box.put_mobject_inside(scene_mobjects)
+    
+    
     s.play(
 
         m.ShowCreation(arrow_a_to_1),
