@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sub_scenes.function_intro_scene.set_to_set_section.numbers_to_numbers_sub_section import numbers_to_numbers_sub_section
+from sub_scenes.function_intro_scene.set_to_set_section.vectors_to_numbers_sub_section import vectors_to_numbers_sub_section
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 
@@ -59,4 +60,5 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     # invalid_function_sub_section(s, x_set, y_set)
     # car_velocity_example_sub_section(s, x_set, y_set)
     # invalid_car_velocity_example(s, x_set, y_set)
-    numbers_to_numbers_sub_section(s, x_set, y_set)
+    # numbers_to_numbers_sub_section(s, x_set, y_set)
+    vectors_to_numbers_sub_section(s, x_set, y_set)

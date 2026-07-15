@@ -3,7 +3,7 @@ import manimlib as m
 
 
 class SceneOverlayBox:
-    def __init__(self, size = 0.4) -> None:
+    def __init__(self, size=0.4) -> None:
         self.FRAME_WIDTH = size * m.FRAME_WIDTH
         self.FRAME_HEIGHT = size * m.FRAME_HEIGHT
         self.color = m.BLACK
@@ -51,7 +51,7 @@ class Set:
     ) -> None:
         self.oval = self.create_oval_mobject()
         self.is_left_set = is_left_set
-        self.elements = self.create_elements_mobject(elements)
+        self.elements = self.create_elements_mobject_for_strings(elements)
         self.set_name = self.create_set_name_mobject(set_name)
         self.mobject = m.VGroup(self.oval, self.elements, self.set_name)
 
@@ -67,7 +67,7 @@ class Set:
         new_oval.rotate(m.PI / 2)
         return new_oval
 
-    def create_elements_mobject(self, elements: list[str]) -> m.VGroup:
+    def create_elements_mobject_for_strings(self, elements: list[str]) -> m.VGroup:
         new_elements = m.VGroup(
             *[m.Text(text, font_size=30, font="Century") for text in elements]
         )
@@ -81,6 +81,26 @@ class Set:
         new_elements.arrange(m.DOWN, buff=0.5)
         new_elements.move_to(self.oval.get_center())
 
+        return new_elements
+
+    def create_elements_mobject_for_mobjects(self, elements: list[str]) -> m.VGroup:
+        new_elements = m.VGroup(*elements)
+        oval_height = self.oval.get_height()
+        oval_width = self.oval.get_width()
+        num_elements = len(new_elements)
+        vertical_buffer_constant = 0.25
+        dots = m.VGroup(*[m.Dot(radius=0.02) for _ in new_elements])
+        for element, dot in zip(new_elements, dots):
+            element.set_height(
+                oval_height / num_elements * (1 - vertical_buffer_constant)
+            )
+            direction = m.RIGHT if self.is_left_set else m.LEFT
+            dot.next_to(element, direction, buff=0.1)
+        new_elements = m.VGroup(
+            *[m.VGroup(dot, element) for dot, element in zip(dots, new_elements)]
+        )
+        new_elements.arrange(m.DOWN, buff=0.10 * oval_height / num_elements)
+        new_elements.move_to(self.oval.get_center())
         return new_elements
 
     def create_set_name_mobject(self, set_name: str) -> m.Text:
@@ -97,8 +117,13 @@ class Set:
         oval_creation_anim = m.FadeIn(self.oval)
         return m.AnimationGroup(oval_creation_anim, text_creation_anim, lag_ratio=0.5)
 
-    def transform_elements(self, new_elements: list[str]) -> m.AnimationGroup:
-        elements_mobjects = self.create_elements_mobject(new_elements)
+    def transform_elements(
+        self, new_elements: list[str] | list[m.Mobject]
+    ) -> m.AnimationGroup:
+        if isinstance(new_elements[0], m.Mobject):
+            elements_mobjects = self.create_elements_mobject_for_mobjects(new_elements)
+        else:
+            elements_mobjects = self.create_elements_mobject_for_strings(new_elements)
         old_elements = self.elements
         self.elements = elements_mobjects
         return m.AnimationGroup(m.ReplacementTransform(old_elements, self.elements))
@@ -112,8 +137,8 @@ def make_arrow(
     stroke_width: float = 2.0,
     upward: bool = False,
     scaling_factor: float = 1.0,
+    angle=m.PI / 4,
 ) -> m.CurvedArrow:
-    angle = m.PI / 4
     arc_angle = -angle if upward else angle
     angle_direction_vector = np.array(
         [np.cos(arc_angle / 2), -1 * np.sin(arc_angle / 2), 0]
@@ -127,3 +152,9 @@ def make_arrow(
     arrow.tip.scale(0.5)  # Adjust the size of the arrow tip
     arrow.tip.shift(angle_direction_vector * buff * np.array([-1, 1, 1]))
     return arrow
+
+
+def get_vertical_number_list_mobject(numbers: list[int]) -> m.Mobject:
+    return m.Matrix(
+        [[n] for n in numbers],
+    )
