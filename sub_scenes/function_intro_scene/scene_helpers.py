@@ -86,7 +86,6 @@ class Set:
     def create_elements_mobject_for_mobjects(self, elements: list[str]) -> m.VGroup:
         new_elements = m.VGroup(*elements)
         oval_height = self.oval.get_height()
-        oval_width = self.oval.get_width()
         num_elements = len(new_elements)
         vertical_buffer_constant = 0.25
         dots = m.VGroup(*[m.Dot(radius=0.02) for _ in new_elements])
