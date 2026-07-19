@@ -69,9 +69,7 @@ def function_types_section(s: MainTheatreScene) -> None:
 
         swatch = m.Line(m.ORIGIN, m.RIGHT * 0.45, color=example["color"])
         swatch.set_stroke(width=6)
-        name = m.Text(
-            example["name"], font=font, font_size=20, color=example["color"]
-        )
+        name = m.Text(example["name"], font=font, font_size=20, color=example["color"])
         formula = mixed_tex_parser.convert_tex_to_vgroup(
             example["formula"], font=font, font_size=16
         )
@@ -95,18 +93,18 @@ def function_types_section(s: MainTheatreScene) -> None:
         )
         s.wait_for_button()
 
-
-    outro = m.Text(
-        "Same idea: each input t gives exactly one output",
-        font=font,
-        font_size=24,
-        color=m.GREY_B,
-    )
-    outro.to_edge(m.DOWN, buff=0.25)
-    s.play(m.FadeIn(outro))
     s.wait_for_button()
 
     s.play(
-        m.FadeOut(m.VGroup(title, axes, x_label, y_label, graphs, legend, outro)),
+        m.FadeOut(
+            m.VGroup(
+                title,
+                axes,
+                x_label,
+                y_label,
+                graphs,
+                legend,
+            )
+        ),
         run_time=0.5,
     )
