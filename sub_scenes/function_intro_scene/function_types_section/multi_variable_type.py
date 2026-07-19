@@ -64,33 +64,39 @@ examples = [
 THETA = -50  # camera azimuth, degrees
 PHI = 68  # camera tilt, degrees
 ROTATION_RATE = 0.15  # radians per second of ambient rotation
+FONT = "Century"
 
 
-def multi_variable_type(s: MainTheatreScene) -> None:
-    font = "Century"
-    title = m.Text("Multivariable Functions Examples", font=font, font_size=32)
+def build_header() -> m.VGroup:
+    title = m.Text("Multivariable Functions Examples", font=FONT, font_size=32)
     subtitle = mixed_tex_parser.convert_tex_to_vgroup(
-        r"one rule $z = f(x, y)$ — many meanings", font=font, font_size=24
+        r"one rule $z = f(x, y)$ — many meanings", font=FONT, font_size=24
     )
     subtitle.set_color(m.GREY_B)
     header = m.VGroup(title, subtitle).arrange(m.DOWN, buff=0.2)
     header.to_edge(m.UP, buff=0.2)
     header.fix_in_frame()
-
-    s.play(m.FadeIn(header, shift=m.DOWN * 0.3))
-
-    for i, example in enumerate(examples):
-        show_example(s, font, example, header)
-        if i < len(examples) - 1:
-            s.wait_for_button()
-
-    s.wait_for_button()
-    s.play(m.FadeOut(header), run_time=0.5)
+    return header
 
 
-def show_example(
-    s: MainTheatreScene, font: str, example: dict, header: m.VGroup
+def color_surface_by_height(
+    surface: m.Surface,
+    axes: m.ThreeDAxes,
+    colorscale: list[tuple[str, float]],
 ) -> None:
+    """Tint every point of the surface by the graph value it sits at."""
+    stops = sorted(colorscale, key=lambda stop: stop[1])
+    values = np.array([value for _, value in stops])
+    rgbs = np.array([m.color_to_rgb(color) for color, _ in stops])
+
+    def rgb_at(point: np.ndarray) -> np.ndarray:
+        z = axes.z_axis.p2n(point)
+        return np.array([np.interp(z, values, rgbs[:, channel]) for channel in range(3)])
+
+    surface.set_color_by_rgb_func(rgb_at, opacity=0.95)
+
+
+def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     xy_range = example.get("xy_range", 3.5)
     resolution = example.get("resolution", 42)
 
@@ -138,42 +144,62 @@ def show_example(
     mesh = m.SurfaceMesh(surface, resolution=(21, 21))
     mesh.set_stroke(m.WHITE, width=0.5, opacity=0.3)
 
+    return dict(axes=axes, surface=surface, mesh=mesh, caption=caption, legend=legend)
+
+
+# Built once, at import time, rather than when the scene reaches this
+# section. ManimGL opens its preview window before importing the scene
+# module, so this construction (LaTeX compilation, surface sampling,
+# per-vertex coloring, mesh generation) happens while the window is still
+# blank — nothing has to be computed once the presentation is running, not
+# even a single freeze-frame.
+HEADER = build_header()
+BUILT_EXAMPLES = [build_example(FONT, HEADER, example) for example in examples]
+
+
+def multi_variable_type(s: MainTheatreScene) -> None:
+    s.play(m.FadeIn(HEADER, shift=m.DOWN * 0.3))
+
+    # The camera settles into its tilted orientation once and stays there —
+    # ambient rotation runs continuously through every example so nothing
+    # ever snaps between them.
     frame = s.camera.frame
     frame.reorient(THETA, PHI)
-
-    s.play(m.FadeIn(caption, shift=m.DOWN * 0.2))
-    s.play(m.ShowCreation(axes), run_time=1.0)
-    s.play(m.ShowCreation(surface), run_time=1.8)
-    s.play(m.FadeIn(mesh), m.FadeIn(legend), run_time=0.6)
 
     def rotate(mob, dt):
         mob.increment_theta(ROTATION_RATE * dt)
 
     frame.add_updater(rotate)
-    s.wait_for_button()
-    frame.remove_updater(rotate)
 
-    s.play(
-        m.FadeOut(m.Group(axes, surface, mesh)),
-        m.FadeOut(caption),
-        m.FadeOut(legend),
-        run_time=0.6,
-    )
+    previous_group = None
+    for built in BUILT_EXAMPLES:
+        previous_group = play_example(s, built, previous_group)
+
+    frame.remove_updater(rotate)
+    s.play(m.FadeOut(previous_group), m.FadeOut(HEADER), run_time=0.6)
     frame.to_default_state()
 
 
-def color_surface_by_height(
-    surface: m.Surface,
-    axes: m.ThreeDAxes,
-    colorscale: list[tuple[str, float]],
-) -> None:
-    """Tint every point of the surface by the graph value it sits at."""
-    stops = sorted(colorscale, key=lambda stop: stop[1])
-    values = np.array([value for _, value in stops])
-    rgbs = np.array([m.color_to_rgb(color) for color, _ in stops])
+def play_example(
+    s: MainTheatreScene, built: dict, previous_group: m.Group | None
+) -> m.Group:
+    axes, surface, mesh = built["axes"], built["surface"], built["mesh"]
+    caption, legend = built["caption"], built["legend"]
 
-    def rgb_at(point: np.ndarray) -> np.ndarray:
-        z = axes.z_axis.p2n(point)
-        return np.array([np.interp(z, values, rgbs[:, channel]) for channel in range(3)])
+    # Crossfade straight into the previous example instead of fading out,
+    # pausing on an empty screen, and fading in — one continuous animation.
+    animations = [
+        m.FadeIn(caption, shift=m.DOWN * 0.2),
+        m.FadeIn(legend),
+        m.ShowCreation(axes),
+        m.ShowCreation(surface),
+        m.FadeIn(mesh),
+    ]
+    if previous_group is not None:
+        # Shorter than the rest so the old example clears early in the crossfade.
+        animations.append(m.FadeOut(previous_group, run_time=0.6))
+    s.play(*animations, run_time=1.8)
 
-    surface.set_color_by_rgb_func(rgb_at, opacity=0.95)
+    s.wait_for_button()
+
+    return m.Group(axes, surface, mesh, caption, legend)

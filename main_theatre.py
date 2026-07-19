@@ -9,6 +9,7 @@ class MainTheatreScene(manim.Scene):
         prompt = manim.Text(message, font_size=24)
         prompt.set_color(manim.YELLOW_B)
         prompt.to_corner(manim.DR)
+        prompt.fix_in_frame()
         self.add(prompt)
         self.wait()
         self.remove(prompt)
