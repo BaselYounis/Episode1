@@ -93,7 +93,7 @@ def color_surface_by_height(
         z = axes.z_axis.p2n(point)
         return np.array([np.interp(z, values, rgbs[:, channel]) for channel in range(3)])
 
-    surface.set_color_by_rgb_func(rgb_at, opacity=0.95)
+    surface.set_color_by_rgb_func(rgb_at, opacity=0.75)
 
 
 def build_example(font: str, header: m.VGroup, example: dict) -> dict:
@@ -171,35 +171,43 @@ def multi_variable_type(s: MainTheatreScene) -> None:
 
     frame.add_updater(rotate)
 
-    previous_group = None
+    previous = None
     for built in BUILT_EXAMPLES:
-        previous_group = play_example(s, built, previous_group)
+        previous = play_example(s, built, previous)
 
     frame.remove_updater(rotate)
-    s.play(m.FadeOut(previous_group), m.FadeOut(HEADER), run_time=0.6)
+    s.play(m.FadeOut(group_of(previous)), m.FadeOut(HEADER), run_time=0.6)
     frame.to_default_state()
 
 
-def play_example(
-    s: MainTheatreScene, built: dict, previous_group: m.Group | None
-) -> m.Group:
-    axes, surface, mesh = built["axes"], built["surface"], built["mesh"]
-    caption, legend = built["caption"], built["legend"]
+def group_of(built: dict) -> m.Group:
+    return m.Group(*(built[key] for key in ("axes", "surface", "mesh", "caption", "legend")))
 
-    # Crossfade straight into the previous example instead of fading out,
-    # pausing on an empty screen, and fading in — one continuous animation.
-    animations = [
-        m.FadeIn(caption, shift=m.DOWN * 0.2),
-        m.FadeIn(legend),
-        m.ShowCreation(axes),
-        m.ShowCreation(surface),
-        m.FadeIn(mesh),
-    ]
-    if previous_group is not None:
-        # Shorter than the rest so the old example clears early in the crossfade.
-        animations.append(m.FadeOut(previous_group, run_time=0.6))
-    s.play(*animations, run_time=1.8)
+
+def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dict:
+    if previous is None:
+        s.play(
+            m.FadeIn(built["caption"], shift=m.DOWN * 0.2),
+            m.FadeIn(built["legend"]),
+            m.ShowCreation(built["axes"]),
+            m.ShowCreation(built["surface"]),
+            m.FadeIn(built["mesh"]),
+            run_time=1.8,
+        )
+    else:
+        # Every example shares the same mobject anatomy and sampling resolution,
+        # so each piece can morph directly into its counterpart: the axes rescale
+        # and the surface deforms into the next landscape in place. Text is the
+        # exception — the captions have no shared structure, so they crossfade.
+        s.play(
+            m.FadeTransform(previous["caption"], built["caption"]),
+            m.FadeTransform(previous["legend"], built["legend"]),
+            m.ReplacementTransform(previous["axes"], built["axes"]),
+            m.ReplacementTransform(previous["surface"], built["surface"]),
+            m.ReplacementTransform(previous["mesh"], built["mesh"]),
+            run_time=1.8,
+        )
 
     s.wait_for_button()
 
-    return m.Group(axes, surface, mesh, caption, legend)
+    return built
