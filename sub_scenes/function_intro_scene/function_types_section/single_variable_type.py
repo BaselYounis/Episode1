@@ -11,24 +11,28 @@ import manimlib as m
 examples = [
     {
         "name": "Car velocity",
+        "label": r"$v(t)$",
         "formula": r"$v(t) = 60\,t\,e^{-0.5t}$",
         "func": lambda t: 60 * t * np.exp(-0.5 * t),
         "color": m.BLUE_B,
     },
     {
         "name": "Population (÷10)",
+        "label": r"$P(t)$",
         "formula": r"$P(t) = \frac{1000}{1 + 9e^{-0.8t}}$",
         "func": lambda t: 100 / (1 + 9 * np.exp(-0.8 * t)),
         "color": m.GREEN_B,
     },
     {
         "name": "Battery charge",
+        "label": r"$C(t)$",
         "formula": r"$C(t) = 100\,e^{-0.25t}$",
         "func": lambda t: 100 * np.exp(-0.25 * t),
         "color": m.YELLOW_B,
     },
     {
         "name": "Stock price",
+        "label": r"$S(t)$",
         "formula": r"$S(t) = 50 + 3t + 6\sin(2t) + 3\sin(5t)$",
         "func": lambda t: 50 + 3 * t + 6 * np.sin(2 * t) + 3 * np.sin(5 * t),
         "color": m.RED_B,
@@ -61,11 +65,25 @@ def single_variable_type(s: MainTheatreScene) -> None:
     s.play(m.FadeIn(title, shift=m.DOWN * 0.3))
     s.play(m.ShowCreation(axes), m.FadeIn(x_label), m.FadeIn(y_label), run_time=1.5)
 
+    def attach_to_tail(label, graph):
+        # Ride the drawing head of the curve while ShowCreation truncates it.
+        label.add_updater(
+            lambda mob: mob.next_to(graph.get_end(), m.UR, buff=0.08)
+        )
+
     graphs = m.VGroup()
+    tail_labels = m.VGroup()
     legend = m.VGroup()
     for example in examples:
         graph = axes.get_graph(example["func"], color=example["color"])
         graphs.add(graph)
+
+        tail_label = mixed_tex_parser.convert_tex_to_vgroup(
+            example["label"], font=font, font_size=20
+        )
+        tail_label.set_color(example["color"])
+        attach_to_tail(tail_label, graph)
+        tail_labels.add(tail_label)
 
         swatch = m.Line(m.ORIGIN, m.RIGHT * 0.45, color=example["color"])
         swatch.set_stroke(width=6)
@@ -85,19 +103,22 @@ def single_variable_type(s: MainTheatreScene) -> None:
     legend.shift(m.DOWN * 0.5)
 
     # Draw each curve alongside its legend entry, one by one.
-    for i, (graph, entry) in enumerate(zip(graphs, legend)):
+    for i, (graph, tail_label, entry) in enumerate(zip(graphs, tail_labels, legend)):
         s.play(
             m.ShowCreation(graph),
+            m.FadeIn(tail_label),
             m.FadeIn(entry, shift=m.LEFT * 0.3),
             run_time=1.5,
         )
+        # Freeze the label at the curve's end once drawing finishes.
+        tail_label.clear_updaters()
 
         if i < len(graphs) - 1:
             s.wait_for_button()
 
     s.wait_for_button()
 
-    scene_mobjects = [title, axes, x_label, y_label, graphs, legend]
+    scene_mobjects = [title, axes, x_label, y_label, graphs, tail_labels, legend]
     s.play(
         m.FadeOut(m.VGroup(*scene_mobjects)),
         run_time=0.5,

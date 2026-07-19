@@ -13,5 +13,5 @@ if TYPE_CHECKING:
 
 
 def function_types_section(s: MainTheatreScene) -> None:
-    # single_variable_type.single_variable_type(s)
+    single_variable_type.single_variable_type(s)
     multi_variable_type.multi_variable_type(s)

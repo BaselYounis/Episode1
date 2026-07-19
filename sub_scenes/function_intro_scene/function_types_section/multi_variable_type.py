@@ -13,7 +13,6 @@ examples = [
     {
         "name": "Temperature",
         "description": "Heat spreading across a metal plate",
-        "formula": r"$T(x, y) = 2.5\,e^{-(x^2 + y^2)/3}$",
         "legend": r"$x, y$ : position on the plate $\quad$ $T$ : temperature",
         "func": lambda x, y: 2.5 * np.exp(-(x**2 + y**2) / 3),
         "z_range": (0, 3, 1),
@@ -22,8 +21,6 @@ examples = [
     {
         "name": "Terrain",
         "description": "A mountain landscape — every point on the map has an altitude",
-        "formula": r"$h(x, y) = 2.2\,e^{-((x-1.5)^2 + (y-1)^2)/2}"
-        r" + 1.6\,e^{-((x+1.5)^2 + (y+1.5)^2)/1.5}$",
         "legend": r"$x, y$ : map coordinates $\quad$ $h$ : altitude",
         "func": lambda x, y: (
             2.2 * np.exp(-((x - 1.5) ** 2 + (y - 1) ** 2) / 2)
@@ -42,8 +39,6 @@ examples = [
         # crossing swell, and small ripples — each with its own direction.
         "name": "Ocean waves",
         "description": "The sea is a sum of waves — swell, a crossing sea, and ripples",
-        "formula": r"$H(x, y) = 0.5\sin(x + 0.6y)"
-        r" + 0.25\sin(0.6x - 1.1y + 2) + 0.12\sin(2.2x + 1.6y)$",
         "legend": r"$x, y$ : position at sea $\quad$ $H$ : wave height",
         "func": lambda x, y: (
             0.50 * np.sin(1.0 * x + 0.6 * y)
@@ -69,11 +64,7 @@ FONT = "Century"
 
 def build_header() -> m.VGroup:
     title = m.Text("Multivariable Functions Examples", font=FONT, font_size=32)
-    subtitle = mixed_tex_parser.convert_tex_to_vgroup(
-        r"one rule $z = f(x, y)$ — many meanings", font=FONT, font_size=24
-    )
-    subtitle.set_color(m.GREY_B)
-    header = m.VGroup(title, subtitle).arrange(m.DOWN, buff=0.2)
+    header = m.VGroup(title)
     header.to_edge(m.UP, buff=0.2)
     header.fix_in_frame()
     return header
@@ -93,7 +84,7 @@ def color_surface_by_height(
         z = axes.z_axis.p2n(point)
         return np.array([np.interp(z, values, rgbs[:, channel]) for channel in range(3)])
 
-    surface.set_color_by_rgb_func(rgb_at, opacity=0.75)
+    surface.set_color_by_rgb_func(rgb_at, opacity=0.90)
 
 
 def build_example(font: str, header: m.VGroup, example: dict) -> dict:
@@ -103,11 +94,7 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     # Captions are pinned to the screen so they always face the viewer.
     name = m.Text(example["name"], font=font, font_size=28, color=m.YELLOW_B)
     description = m.Text(example["description"], font=font, font_size=20, color=m.GREY_A)
-    formula = mixed_tex_parser.convert_tex_to_vgroup(
-        example["formula"], font=font, font_size=20
-    )
-    formula.set_color(m.BLUE_B)
-    caption = m.VGroup(name, description, formula).arrange(
+    caption = m.VGroup(name, description).arrange(
         m.DOWN, aligned_edge=m.LEFT, buff=0.15
     )
 
