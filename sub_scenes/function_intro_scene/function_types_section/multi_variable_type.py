@@ -9,20 +9,15 @@ from helpers import mixed_tex_parser
 import manimlib as m
 
 # Each colorscale is a list of (color, z-value) stops, ordered by z.
+# Every "func" takes (x, y, t). Static examples ignore t; examples marked
+# "animated" keep evolving in time while they are on screen ("t_max", if
+# given, freezes the clock once the motion has made its point).
 examples = [
-    {
-        "name": "Temperature",
-        "description": "Heat spreading across a metal plate",
-        "legend": r"$x, y$ : position on the plate $\quad$ $T$ : temperature",
-        "func": lambda x, y: 2.5 * np.exp(-(x**2 + y**2) / 3),
-        "z_range": (0, 3, 1),
-        "colorscale": [(m.BLUE_D, 0.0), (m.YELLOW, 1.2), (m.RED, 2.4)],
-    },
     {
         "name": "Terrain",
         "description": "A mountain landscape — every point on the map has an altitude",
         "legend": r"$x, y$ : map coordinates $\quad$ $h$ : altitude",
-        "func": lambda x, y: (
+        "func": lambda x, y, t: (
             2.2 * np.exp(-((x - 1.5) ** 2 + (y - 1) ** 2) / 2)
             + 1.6 * np.exp(-((x + 1.5) ** 2 + (y + 1.5) ** 2) / 1.5)
         ),
@@ -35,15 +30,31 @@ examples = [
         ],
     },
     {
-        # Real seas are a superposition of waves: a dominant swell, a weaker
-        # crossing swell, and small ripples — each with its own direction.
+        # The Gaussian solution of the heat equation: as time passes the
+        # peak temperature dies down while the same heat spreads ever wider,
+        # so the red hot spot flattens and fades toward a cool blue plate.
+        "name": "Temperature",
+        "description": "A hot spot on a metal plate — the heat spreads and cools with time",
+        "legend": r"$x, y$ : position on the plate $\quad$ $t$ : time $\quad$ $T$ : temperature",
+        "func": lambda x, y, t: (
+            2.5 / (1 + t / 2) * np.exp(-(x**2 + y**2) / (3 * (1 + t / 2)))
+        ),
+        "z_range": (0, 3, 1),
+        "colorscale": [(m.BLUE_D, 0.0), (m.YELLOW, 1.2), (m.RED, 2.4)],
+        "animated": True,
+        "t_max": 16.0,
+    },
+    {
+        # Real seas are a superposition of traveling waves: a dominant swell,
+        # a weaker crossing swell, and small ripples — each with its own
+        # direction and speed, so the height at every point keeps changing.
         "name": "Ocean waves",
-        "description": "The sea is a sum of waves — swell, a crossing sea, and ripples",
-        "legend": r"$x, y$ : position at sea $\quad$ $H$ : wave height",
-        "func": lambda x, y: (
-            0.50 * np.sin(1.0 * x + 0.6 * y)
-            + 0.25 * np.sin(0.6 * x - 1.1 * y + 2)
-            + 0.12 * np.sin(2.2 * x + 1.6 * y)
+        "description": "The sea is a sum of traveling waves — swell, a crossing sea, and ripples",
+        "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $H$ : wave height",
+        "func": lambda x, y, t: (
+            0.50 * np.sin(1.0 * x + 0.6 * y - 1.2 * t)
+            + 0.25 * np.sin(0.6 * x - 1.1 * y - 0.9 * t + 2)
+            + 0.12 * np.sin(2.2 * x + 1.6 * y - 2.0 * t)
         ),
         "z_range": (-1.5, 1.5, 0.5),
         "colorscale": [
@@ -53,6 +64,7 @@ examples = [
             (m.WHITE, 0.9),
         ],
         "xy_range": 4.0,
+        "animated": True,
     },
 ]
 
@@ -85,6 +97,74 @@ def color_surface_by_height(
         return np.array([np.interp(z, values, rgbs[:, channel]) for channel in range(3)])
 
     surface.set_color_by_rgb_func(rgb_at, opacity=0.90)
+
+
+def refresh_mesh(mesh: m.SurfaceMesh, surface: m.Surface) -> None:
+    """Redraw the existing wireframe curves over the surface's current points.
+
+    Mirrors SurfaceMesh.init_points, but rewrites the already-created paths
+    in place (with straight segments — indistinguishable at this sampling
+    density) so it is cheap enough to run every frame.
+    """
+    full_nu, full_nv = surface.resolution
+    part_nu, part_nv = mesh.resolution
+    points = surface.get_points() + mesh.normal_nudge * surface.get_unit_normals()
+    paths = iter(mesh.submobjects)
+    for ui in np.linspace(0, full_nu - 1, part_nu):
+        low = full_nv * int(np.floor(ui))
+        high = full_nv * int(np.ceil(ui))
+        next(paths).set_points_as_corners(
+            m.interpolate(points[low:low + full_nv], points[high:high + full_nv], ui % 1)
+        )
+    for vi in np.linspace(0, full_nv - 1, part_nv):
+        next(paths).set_points_as_corners(
+            m.interpolate(
+                points[int(np.floor(vi))::full_nv],
+                points[int(np.ceil(vi))::full_nv],
+                vi % 1,
+            )
+        )
+
+
+def make_time_updater(built: dict):
+    """Build an updater that advances the example's clock and re-evaluates
+    the surface (points, height colors, wireframe) in place each frame.
+
+    All heavy work is vectorized numpy over the surface's fixed (u, v)
+    sample grid, so the per-frame cost stays well under a millisecond.
+    """
+    example, axes = built["example"], built["axes"]
+    surface, mesh = built["surface"], built["mesh"]
+    func = example["func"]
+    t_max = example.get("t_max", np.inf)
+
+    nu, nv = surface.resolution
+    u_values = np.linspace(*surface.u_range, nu)
+    v_values = np.linspace(*surface.v_range, nv)
+    # Same u-major flattened order as Surface.init_points.
+    U, V = (grid.flatten() for grid in np.meshgrid(u_values, v_values, indexing="ij"))
+    eps = surface.epsilon
+
+    stops = sorted(example["colorscale"], key=lambda stop: stop[1])
+    stop_values = np.array([value for _, value in stops])
+    stop_rgbs = np.array([m.color_to_rgb(color) for color, _ in stops])
+
+    clock = {"t": 0.0}
+
+    def advance(surf: m.Surface, dt: float) -> None:
+        clock["t"] = min(clock["t"] + dt, t_max)
+        t = clock["t"]
+        z = func(U, V, t)
+        surf.data["point"][:] = axes.c2p(U, V, z)
+        surf.data["du_point"][:] = axes.c2p(U + eps, V, func(U + eps, V, t))
+        surf.data["dv_point"][:] = axes.c2p(U, V + eps, func(U, V + eps, t))
+        # Re-tint by height; alpha is left as set at build time.
+        for channel in range(3):
+            surf.data["rgba"][:, channel] = np.interp(z, stop_values, stop_rgbs[:, channel])
+        surf.note_changed_data()
+        refresh_mesh(mesh, surf)
+
+    return advance
 
 
 def build_example(font: str, header: m.VGroup, example: dict) -> dict:
@@ -122,7 +202,7 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
         depth=3.6,
     )
     surface = m.ParametricSurface(
-        lambda u, v: axes.c2p(u, v, example["func"](u, v)),
+        lambda u, v: axes.c2p(u, v, example["func"](u, v, 0.0)),
         u_range=(-xy_range, xy_range),
         v_range=(-xy_range, xy_range),
         resolution=(resolution, resolution),
@@ -131,7 +211,10 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     mesh = m.SurfaceMesh(surface, resolution=(21, 21))
     mesh.set_stroke(m.WHITE, width=0.5, opacity=0.3)
 
-    return dict(axes=axes, surface=surface, mesh=mesh, caption=caption, legend=legend)
+    return dict(
+        example=example, axes=axes, surface=surface, mesh=mesh,
+        caption=caption, legend=legend,
+    )
 
 
 # Built once, at import time, rather than when the scene reaches this
@@ -163,6 +246,7 @@ def multi_variable_type(s: MainTheatreScene) -> None:
         previous = play_example(s, built, previous)
 
     frame.remove_updater(rotate)
+    previous["surface"].clear_updaters()
     s.play(m.FadeOut(group_of(previous)), m.FadeOut(HEADER), run_time=0.6)
     frame.to_default_state()
 
@@ -172,6 +256,16 @@ def group_of(built: dict) -> m.Group:
 
 
 def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dict:
+    updater = make_time_updater(built) if built["example"].get("animated") else None
+    if updater is not None:
+        # Rewind to t = 0 before the surface enters, in case a previous run
+        # of the section left the prebuilt mobjects mid-animation.
+        updater(built["surface"], 0.0)
+    if previous is not None:
+        # Freeze the outgoing example so its updater doesn't fight the
+        # morph into the next one.
+        previous["surface"].clear_updaters()
+
     if previous is None:
         s.play(
             m.FadeIn(built["caption"], shift=m.DOWN * 0.2),
@@ -194,6 +288,11 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
             m.ReplacementTransform(previous["mesh"], built["mesh"]),
             run_time=1.8,
         )
+
+    if updater is not None:
+        # Time starts flowing once the surface is in place, and keeps
+        # flowing while the presenter holds on this example.
+        built["surface"].add_updater(updater)
 
     s.wait_for_button()
 
