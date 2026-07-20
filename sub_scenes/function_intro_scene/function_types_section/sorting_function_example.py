@@ -17,28 +17,31 @@ def sorting_function_example(s: MainTheatreScene) -> None:
 
     unsorted = [5, 2, 8, 1, 9, 3]
 
-    # ---------- blue gradient: low value = faint, high value = saturated ----------
+    # ---------- blue sadient: low value = faint, high value = saturated ----------
+    # Both the hue and the fill opacity ramp with value: low values are a pale,
+    # translucent tint of BLUE_C, high values are the full, opaque colour.
+    BASE = m.BLUE_C
     lo, hi = min(unsorted), max(unsorted)
-    FAINT = "#BBD9F7"   # pale, low-saturation blue
-    DEEP = "#023E8A"    # rich, saturated blue
 
     def value_ratio(value):
         return (value - lo) / (hi - lo)
 
     def value_color(value):
-        return m.interpolate_color(FAINT, DEEP, value_ratio(value))
+        # Lighten toward white for low values; land on full BLUE_C at the top.
+        return m.interpolate_color(m.BLUE, BASE, 0.3 + 0.7 * value_ratio(value))
+
+    def value_opacity(value):
+        return 0.4 + 0.6 * value_ratio(value)
 
     # ---------- helpers ----------
     def make_box(value):
-        # Dark boxes need light digits to stay legible against the deep blue.
-        text_color = m.WHITE if value_ratio(value) > 0.45 else m.BLACK
         sq = m.RoundedRectangle(
             width=0.62, height=0.62, corner_radius=0.08,
-            fill_color=value_color(value), fill_opacity=1.0,
+            fill_color=value_color(value), fill_opacity=value_opacity(value),
             stroke_color=m.WHITE, stroke_width=2.2,
         )
         num = m.Text(str(value), font=FONT, font_size=26,
-                     color=text_color, weight=m.BOLD)
+                     color=m.BLACK, weight=m.BOLD)
         num.move_to(sq)
         return m.VGroup(sq, num)
 
