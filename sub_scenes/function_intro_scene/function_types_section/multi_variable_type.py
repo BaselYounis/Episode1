@@ -201,6 +201,18 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
         height=7.0,
         depth=3.6,
     )
+    # Axis labels ride with the axes (so they morph between examples) rather
+    # than being pinned to the frame.
+    x_label = axes.get_x_axis_label("x", buff=0.45)
+    y_label = axes.get_y_axis_label("y", buff=0.45)
+    z_label = m.Tex("H")
+    # Stand the label upright (in a vertical plane) instead of lying flat in
+    # the xy plane, then park it above the top of the z-axis.
+    z_label.rotate(90 * m.DEGREES, axis=m.RIGHT)
+    z_label.next_to(axes.z_axis.get_end(), m.OUT, buff=0.2)
+    axis_labels = m.VGroup(x_label, y_label, z_label)
+    axis_labels.set_color(m.GREY_A)
+
     surface = m.ParametricSurface(
         lambda u, v: axes.c2p(u, v, example["func"](u, v, 0.0)),
         u_range=(-xy_range, xy_range),
@@ -212,8 +224,8 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     mesh.set_stroke(m.WHITE, width=0.5, opacity=0.3)
 
     return dict(
-        example=example, axes=axes, surface=surface, mesh=mesh,
-        caption=caption, legend=legend,
+        example=example, axes=axes, axis_labels=axis_labels,
+        surface=surface, mesh=mesh, caption=caption, legend=legend,
     )
 
 
@@ -252,7 +264,7 @@ def multi_variable_type(s: MainTheatreScene) -> None:
 
 
 def group_of(built: dict) -> m.Group:
-    return m.Group(*(built[key] for key in ("axes", "surface", "mesh", "caption", "legend")))
+    return m.Group(*(built[key] for key in ("axes", "axis_labels", "surface", "mesh", "caption", "legend")))
 
 
 def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dict:
@@ -271,6 +283,7 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
             m.FadeIn(built["caption"], shift=m.DOWN * 0.2),
             m.FadeIn(built["legend"]),
             m.ShowCreation(built["axes"]),
+            m.Write(built["axis_labels"]),
             m.ShowCreation(built["surface"]),
             m.FadeIn(built["mesh"]),
             run_time=1.8,
@@ -284,6 +297,7 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
             m.FadeTransform(previous["caption"], built["caption"]),
             m.FadeTransform(previous["legend"], built["legend"]),
             m.ReplacementTransform(previous["axes"], built["axes"]),
+            m.ReplacementTransform(previous["axis_labels"], built["axis_labels"]),
             m.ReplacementTransform(previous["surface"], built["surface"]),
             m.ReplacementTransform(previous["mesh"], built["mesh"]),
             run_time=1.8,

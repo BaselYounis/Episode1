@@ -1,3 +1,10 @@
+import os
+import sys
+
+# Ensure the project root is importable regardless of how manimgl launches this
+# file (manimgl loads scripts by path without adding their dir to sys.path).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import manimlib as manim
 from sub_scenes import introduction_scene
 from helper_animated_objects.general_objects import main_background
