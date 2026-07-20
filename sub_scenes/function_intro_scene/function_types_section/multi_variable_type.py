@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import numpy as np
-
 if TYPE_CHECKING:
     from main_theatre import MainTheatreScene
 
@@ -17,6 +16,11 @@ examples = [
         "name": "Terrain",
         "description": "A mountain landscape — every point on the map has an altitude",
         "legend": r"$x, y$ : map coordinates $\quad$ $Z$ : altitude",
+        "mapping": r"a vector $(x, y) \in \mathbb{R}^2$ maps to a single scalar $z \in \mathbb{R}$",
+        # A single input point to probe, demonstrating the (x, y) -> z mapping
+        # on the one static example (only defined here so the reveal happens
+        # once, on a surface that holds still).
+        "probe": (1.0, 0.5),
         "func": lambda x, y, t: (
             2.2 * np.exp(-((x - 1.5) ** 2 + (y - 1) ** 2) / 2)
             + 1.6 * np.exp(-((x + 1.5) ** 2 + (y + 1.5) ** 2) / 1.5)
@@ -36,6 +40,7 @@ examples = [
         "name": "Temperature",
         "description": "A hot spot on a metal plate — the heat spreads and cools with time",
         "legend": r"$x, y$ : position on the plate $\quad$ $t$ : time $\quad$ $Z$ : temperature",
+        "mapping": r"a vector $(x, y, t) \in \mathbb{R}^3$ maps to a single scalar $z \in \mathbb{R}$",
         "func": lambda x, y, t: (
             2.5 / (1 + t / 2) * np.exp(-(x**2 + y**2) / (3 * (1 + t / 2)))
         ),
@@ -51,6 +56,7 @@ examples = [
         "name": "Ocean waves",
         "description": "The sea is a sum of traveling waves — swell, a crossing sea, and ripples",
         "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $Z$ : wave height",
+        "mapping": r"a vector $(x, y, t) \in \mathbb{R}^3$ maps to a single scalar $z \in \mathbb{R}$",
         "func": lambda x, y, t: (
             0.50 * np.sin(1.0 * x + 0.6 * y - 1.2 * t)
             + 0.25 * np.sin(0.6 * x - 1.1 * y - 0.9 * t + 2)
@@ -70,9 +76,13 @@ examples = [
 
 THETA = -50  # camera azimuth, degrees
 PHI = 68  # camera tilt, degrees
-RADIUS = 13.0  # camera distance from the axes' center (default is ~9.66)
+RADIUS = 11.0  # camera distance from the axes' center (default is ~9.66)
 ROTATION_RATE = 0.15  # radians per second of ambient rotation
 FONT = "Century"
+
+
+INPUT_COLOR = m.TEAL_B  # the input vector (x, y)
+OUTPUT_COLOR = m.YELLOW_B  # the scalar output z
 
 
 def build_header() -> m.VGroup:
@@ -168,9 +178,63 @@ def make_time_updater(built: dict):
     return advance
 
 
+def build_probe(axes: m.ThreeDAxes, example: dict) -> dict | None:
+    """Build the mobjects that pick one input point and trace it to its output.
+
+    An arrow lying in the base plane is the input vector (x, y); a dashed
+    riser climbs from it to the surface, where a single dot marks the scalar
+    output z. Returns the pieces plus a reveal-order so the animation reads
+    left-to-right: vector in, climb, number out.
+    """
+    if "probe" not in example:
+        return None
+
+    x0, y0 = example["probe"]
+    z0 = float(example["func"](x0, y0, 0.0))
+
+    origin = axes.c2p(0, 0, 0)
+    base = axes.c2p(x0, y0, 0)
+    top = axes.c2p(x0, y0, z0)
+
+    input_arrow = m.Arrow(origin, base, buff=0, thickness=3)
+    input_arrow.set_color(INPUT_COLOR)
+    input_dot = m.Dot(base, radius=0.05).set_color(INPUT_COLOR)
+
+    riser = m.DashedLine(base, top, dash_length=0.1)
+    riser.set_stroke(m.GREY_B, width=2, opacity=0.9)
+
+    output_dot = m.Dot(top, radius=0.07).set_color(OUTPUT_COLOR)
+    output_dot.set_stroke(m.WHITE, width=1)
+
+    # Labels stand upright (in a vertical plane) so they stay legible as the
+    # camera orbits, matching how the z-axis label is oriented.
+    input_label = m.Tex("(x, y)", font_size=30).set_color(INPUT_COLOR)
+    input_label.rotate(90 * m.DEGREES, axis=m.RIGHT)
+    input_label.next_to(base, m.DOWN + m.OUT, buff=0.12)
+
+    output_label = m.Tex("z", font_size=34).set_color(OUTPUT_COLOR)
+    output_label.rotate(90 * m.DEGREES, axis=m.RIGHT)
+    output_label.next_to(top, m.OUT, buff=0.12)
+
+    return dict(
+        input_arrow=input_arrow, input_dot=input_dot, input_label=input_label,
+        riser=riser, output_dot=output_dot, output_label=output_label,
+    )
+
+
 def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     xy_range = example.get("xy_range", 3.5)
     resolution = example.get("resolution", 42)
+
+    # The mapping notation rides with the example (not the header) so it can
+    # change with the arity of the input: (x, y) for the static terrain,
+    # (x, y, t) for the time-dependent examples.
+    subtitle = mixed_tex_parser.convert_tex_to_vgroup(
+        example["mapping"], font=font, font_size=20
+    )
+    subtitle.set_color(m.GREY_A)
+    subtitle.next_to(header, m.DOWN, buff=0.14)
+    subtitle.fix_in_frame()
 
     # Captions are pinned to the screen so they always face the viewer.
     name = m.Text(example["name"], font=font, font_size=28, color=m.YELLOW_B)
@@ -190,9 +254,9 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
             part.set_width(12)
         part.fix_in_frame()
 
-    # Tuck the caption under the section header so the two never overlap.
+    # Tuck the caption under the mapping subtitle so the two never overlap.
     caption.to_edge(m.LEFT, buff=0.3)
-    caption.next_to(header, m.DOWN, buff=0.35, coor_mask=m.UP)
+    caption.next_to(subtitle, m.DOWN, buff=0.3, coor_mask=m.UP)
 
     axes = m.ThreeDAxes(
         x_range=(-xy_range, xy_range, 1),
@@ -226,7 +290,8 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
 
     return dict(
         example=example, axes=axes, axis_labels=axis_labels,
-        surface=surface, mesh=mesh, caption=caption, legend=legend,
+        surface=surface, mesh=mesh, subtitle=subtitle, caption=caption, legend=legend,
+        probe=build_probe(axes, example),
     )
 
 
@@ -268,7 +333,7 @@ def multi_variable_type(s: MainTheatreScene) -> None:
 
 
 def group_of(built: dict) -> m.Group:
-    return m.Group(*(built[key] for key in ("axes", "axis_labels", "surface", "mesh", "caption", "legend")))
+    return m.Group(*(built[key] for key in ("axes", "axis_labels", "surface", "mesh", "subtitle", "caption", "legend")))
 
 
 def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dict:
@@ -284,6 +349,7 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
 
     if previous is None:
         s.play(
+            m.FadeIn(built["subtitle"]),
             m.FadeIn(built["caption"], shift=m.DOWN * 0.2),
             m.FadeIn(built["legend"]),
             m.ShowCreation(built["axes"]),
@@ -298,6 +364,7 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
         # and the surface deforms into the next landscape in place. Text is the
         # exception — the captions have no shared structure, so they crossfade.
         s.play(
+            m.FadeTransform(previous["subtitle"], built["subtitle"]),
             m.FadeTransform(previous["caption"], built["caption"]),
             m.FadeTransform(previous["legend"], built["legend"]),
             m.ReplacementTransform(previous["axes"], built["axes"]),
@@ -306,6 +373,9 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
             m.ReplacementTransform(previous["mesh"], built["mesh"]),
             run_time=1.8,
         )
+
+    if built["probe"] is not None:
+        reveal_probe(s, built["probe"])
 
     if updater is not None:
         # The surface holds still at t = 0 until the presenter is ready; the
@@ -316,4 +386,30 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
 
     s.wait_for_button()
 
+    if built["probe"] is not None:
+        # Clear the probe before this example morphs into the next, whose
+        # surface has no matching input point.
+        s.play(m.FadeOut(m.VGroup(*built["probe"].values())), run_time=0.5)
+        built["probe"] = None
+
     return built
+
+
+def reveal_probe(s: MainTheatreScene, probe: dict) -> None:
+    """Walk through the mapping one beat at a time: vector in, climb, scalar out."""
+    s.wait_for_button("Press SPACE to probe a point ")
+    # The input: a vector (x, y) in the base plane.
+    s.play(
+        m.GrowArrow(probe["input_arrow"]),
+        m.FadeIn(probe["input_dot"]),
+        m.Write(probe["input_label"]),
+        run_time=0.9,
+    )
+    # Climb straight up to the surface it lands on.
+    s.play(m.ShowCreation(probe["riser"]), run_time=0.8)
+    # The output: one scalar z, the height of the surface there.
+    s.play(
+        m.FadeIn(probe["output_dot"], scale=0.5),
+        m.Write(probe["output_label"]),
+        run_time=0.7,
+    )

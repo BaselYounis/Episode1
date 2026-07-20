@@ -9,7 +9,8 @@ import manimlib as m
 
 FONT = "Century"
 ACCENT = "#4CC9F0"   # machine / signature accent
-PROC = "#F72585"     # processing pulse
+FLASH = "#22D3EE"    # cyan processing flash
+F_COLOR = "#FFFFFF"  # white "f" so it reads on the black box
 
 
 def sorting_function_example(s: MainTheatreScene) -> None:
@@ -38,7 +39,7 @@ def sorting_function_example(s: MainTheatreScene) -> None:
         sq = m.RoundedRectangle(
             width=0.62, height=0.62, corner_radius=0.08,
             fill_color=value_color(value), fill_opacity=value_opacity(value),
-            stroke_color=m.WHITE, stroke_width=2.2,
+            stroke_color=m.BLACK, stroke_width=2.2,
         )
         num = m.Text(str(value), font=FONT, font_size=26,
                      color=m.BLACK, weight=m.BOLD)
@@ -82,10 +83,10 @@ def sorting_function_example(s: MainTheatreScene) -> None:
     # ---------- machine f ----------
     body = m.RoundedRectangle(
         width=2.4, height=4.0, corner_radius=0.28,
-        fill_color="#161B26", fill_opacity=1.0,
+        fill_color=m.BLACK, fill_opacity=1.0,
         stroke_color=ACCENT, stroke_width=3,
     ).shift(m.DOWN * 0.15)
-    f_label = m.Tex(r"f", font_size=72, color=ACCENT).move_to(body)
+    f_label = m.Tex(r"f", font_size=72).set_color(F_COLOR).move_to(body)
     machine = m.VGroup(body, f_label)
 
     # ---------- output vector y ----------
@@ -125,9 +126,12 @@ def sorting_function_example(s: MainTheatreScene) -> None:
     )
     s.remove(feeders)
 
-    # processing pulse
-    s.play(body.animate.set_stroke(PROC, 6), f_label.animate.set_color(PROC),
-           rate_func=m.there_and_back, run_time=0.55)
+    # processing pulse — the black box flashes cyan
+    s.play(
+        body.animate.set_fill(FLASH, 1.0).set_stroke(FLASH, 6),
+        f_label.animate.set_color(m.WHITE),
+        rate_func=m.there_and_back, run_time=0.55,
+    )
 
     # emit y
     for b in out_col:
