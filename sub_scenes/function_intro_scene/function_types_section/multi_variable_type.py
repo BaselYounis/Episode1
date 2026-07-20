@@ -70,7 +70,7 @@ examples = [
 
 THETA = -50  # camera azimuth, degrees
 PHI = 68  # camera tilt, degrees
-RADIUS = 26.0  # camera distance from the axes' center (default is ~9.66)
+RADIUS = 13.0  # camera distance from the axes' center (default is ~9.66)
 ROTATION_RATE = 0.15  # radians per second of ambient rotation
 FONT = "Century"
 
