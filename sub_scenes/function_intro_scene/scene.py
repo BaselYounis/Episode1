@@ -1,5 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main_theatre import MainTheatreScene
+import manimlib as m
 
 from sub_scenes.function_intro_scene.function_types_section.function_types_section import function_types_section
 
@@ -7,9 +10,6 @@ from sub_scenes.function_intro_scene.function_types_section.function_types_secti
 
 from .set_to_set_section.set_to_set_section import set_to_set_section
 
-if TYPE_CHECKING:
-    from main_theatre import MainTheatreScene
-import manimlib as m
 
 
 def function_intro_scene(s: MainTheatreScene) -> None:
