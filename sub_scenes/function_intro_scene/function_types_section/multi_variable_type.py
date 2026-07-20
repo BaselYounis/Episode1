@@ -16,7 +16,7 @@ examples = [
     {
         "name": "Terrain",
         "description": "A mountain landscape — every point on the map has an altitude",
-        "legend": r"$x, y$ : map coordinates $\quad$ $h$ : altitude",
+        "legend": r"$x, y$ : map coordinates $\quad$ $Z$ : altitude",
         "func": lambda x, y, t: (
             2.2 * np.exp(-((x - 1.5) ** 2 + (y - 1) ** 2) / 2)
             + 1.6 * np.exp(-((x + 1.5) ** 2 + (y + 1.5) ** 2) / 1.5)
@@ -35,7 +35,7 @@ examples = [
         # so the red hot spot flattens and fades toward a cool blue plate.
         "name": "Temperature",
         "description": "A hot spot on a metal plate — the heat spreads and cools with time",
-        "legend": r"$x, y$ : position on the plate $\quad$ $t$ : time $\quad$ $T$ : temperature",
+        "legend": r"$x, y$ : position on the plate $\quad$ $t$ : time $\quad$ $Z$ : temperature",
         "func": lambda x, y, t: (
             2.5 / (1 + t / 2) * np.exp(-(x**2 + y**2) / (3 * (1 + t / 2)))
         ),
@@ -50,7 +50,7 @@ examples = [
         # direction and speed, so the height at every point keeps changing.
         "name": "Ocean waves",
         "description": "The sea is a sum of traveling waves — swell, a crossing sea, and ripples",
-        "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $H$ : wave height",
+        "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $Z$ : wave height",
         "func": lambda x, y, t: (
             0.50 * np.sin(1.0 * x + 0.6 * y - 1.2 * t)
             + 0.25 * np.sin(0.6 * x - 1.1 * y - 0.9 * t + 2)
@@ -70,6 +70,7 @@ examples = [
 
 THETA = -50  # camera azimuth, degrees
 PHI = 68  # camera tilt, degrees
+RADIUS = 26.0  # camera distance from the axes' center (default is ~9.66)
 ROTATION_RATE = 0.15  # radians per second of ambient rotation
 FONT = "Century"
 
@@ -247,6 +248,9 @@ def multi_variable_type(s: MainTheatreScene) -> None:
     # ever snaps between them.
     frame = s.camera.frame
     frame.reorient(THETA, PHI)
+    # Pull the camera back from the center of the axes. The distance is the
+    # frame's focal distance, so setting it also flattens perspective slightly.
+    frame.set_focal_distance(RADIUS)
 
     def rotate(mob, dt):
         mob.increment_theta(ROTATION_RATE * dt)
