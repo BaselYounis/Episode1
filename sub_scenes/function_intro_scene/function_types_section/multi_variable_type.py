@@ -21,7 +21,7 @@ examples = [
             2.2 * np.exp(-((x - 1.5) ** 2 + (y - 1) ** 2) / 2)
             + 1.6 * np.exp(-((x + 1.5) ** 2 + (y + 1.5) ** 2) / 1.5)
         ),
-        "z_range": (0, 3, 1),
+        "z_range": (-1, 3, 1),
         "colorscale": [
             (m.GREEN_E, 0.05),
             (m.GREEN_C, 0.8),
@@ -39,7 +39,7 @@ examples = [
         "func": lambda x, y, t: (
             2.5 / (1 + t / 2) * np.exp(-(x**2 + y**2) / (3 * (1 + t / 2)))
         ),
-        "z_range": (0, 3, 1),
+        "z_range": (-1, 3, 1),
         "colorscale": [(m.BLUE_D, 0.0), (m.YELLOW, 1.2), (m.RED, 2.4)],
         "animated": True,
         "t_max": 16.0,
@@ -56,7 +56,7 @@ examples = [
             + 0.25 * np.sin(0.6 * x - 1.1 * y - 0.9 * t + 2)
             + 0.12 * np.sin(2.2 * x + 1.6 * y - 2.0 * t)
         ),
-        "z_range": (-1.5, 1.5, 0.5),
+        "z_range": (-1, 3, 1),
         "colorscale": [
             (m.BLUE_E, -0.85),
             (m.BLUE_D, -0.2),
@@ -205,7 +205,7 @@ def build_example(font: str, header: m.VGroup, example: dict) -> dict:
     # than being pinned to the frame.
     x_label = axes.get_x_axis_label("x", buff=0.45)
     y_label = axes.get_y_axis_label("y", buff=0.45)
-    z_label = m.Tex("H")
+    z_label = m.Tex("z")
     # Stand the label upright (in a vertical plane) instead of lying flat in
     # the xy plane, then park it above the top of the z-axis.
     z_label.rotate(90 * m.DEGREES, axis=m.RIGHT)
@@ -304,8 +304,10 @@ def play_example(s: MainTheatreScene, built: dict, previous: dict | None) -> dic
         )
 
     if updater is not None:
-        # Time starts flowing once the surface is in place, and keeps
-        # flowing while the presenter holds on this example.
+        # The surface holds still at t = 0 until the presenter is ready; the
+        # first button press starts the clock, and the shape only begins to
+        # evolve from there. A second press then moves on to the next example.
+        s.wait_for_button("Press SPACE to start time ")
         built["surface"].add_updater(updater)
 
     s.wait_for_button()
