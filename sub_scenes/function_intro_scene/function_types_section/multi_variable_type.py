@@ -15,7 +15,7 @@ examples = [
     {
         "name": "Terrain",
         "description": "A mountain landscape — every point on the map has an altitude",
-        "legend": r"$x, y$ : map coordinates $\quad$ $Z$ : altitude",
+        "legend": r"$x, y$ : map coordinates $\quad$ $z$ : altitude",
         "mapping": r"a vector $(x, y) \in \mathbb{R}^2$ maps to a single scalar $z \in \mathbb{R}$",
         # A single input point to probe, demonstrating the (x, y) -> z mapping
         # on the one static example (only defined here so the reveal happens

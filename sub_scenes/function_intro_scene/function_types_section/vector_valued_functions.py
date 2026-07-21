@@ -47,6 +47,10 @@ Y_COLOR = m.GREEN_B    # cross-range
 Z_COLOR = m.BLUE_B     # height
 VEC_COLOR = m.YELLOW_B  # the output vector r(t) itself
 
+# Base -> tip order of the gradient painted on r(t), matching the order the
+# dashed staircase walks the components: x, then y, then z.
+COMPONENT_COLORS = (X_COLOR, Y_COLOR, Z_COLOR)
+
 # Shaft diameter of the 3D r(t) arrow, in scene units. Kept slim on purpose:
 # the arrow has to sit on top of the flight path without swallowing it.
 VEC_THICKNESS = 0.04
@@ -93,6 +97,7 @@ def build_formula() -> m.Tex:
     for sub, color in parts.items():
         formula.select_parts(sub).set_color(color)
     formula.to_corner(m.UL, buff=0.4).shift(m.DOWN * 1.1)
+    formula.shift(m.UP * 0.5)  # nudge right so the left edge doesn't collide with the frame
     formula.fix_in_frame()
     return formula
 
@@ -164,11 +169,56 @@ def attach_t_updaters(t_bar: dict, t_tracker: m.ValueTracker) -> None:
     move_pointer(pointer)
 
 
+def staircase_legs(axes: m.ThreeDAxes, t: float) -> list[float]:
+    """Scene-space lengths of the three legs origin -> x -> y -> z at time t —
+    the same walk the dashed breakdown draws."""
+    x0, y0, z0 = x_of(t), y_of(t), z_of(t)
+    o = axes.c2p(0, 0, 0)
+    px = axes.c2p(x0, 0, 0)
+    pxy = axes.c2p(x0, y0, 0)
+    pxyz = axes.c2p(x0, y0, z0)
+    return [m.get_norm(px - o), m.get_norm(pxy - px), m.get_norm(pxyz - pxy)]
+
+
+def axis_gradient_rgba_func(
+    start: np.ndarray,
+    end: np.ndarray,
+    colors,
+    weights=None,
+    opacity: float = 1.0,
+):
+    """An rgba function that paints a mobject along the start -> end direction,
+    blending through `colors`. Each colour owns a share of the length given by
+    `weights` (equal shares if omitted) and sits at the middle of its share, so
+    every component gets a solid band with the blends happening in between.
+    """
+    axis = end - start
+    axis_sq = float(np.dot(axis, axis))
+    rgbs = np.array([m.color_to_rgb(c) for c in colors])
+
+    w = np.ones(len(rgbs)) if weights is None else np.array(weights, dtype=float)
+    w = w / w.sum() if w.sum() > 0 else np.ones(len(rgbs)) / len(rgbs)
+    edges = np.concatenate([[0.0], np.cumsum(w)])
+    centers = (edges[:-1] + edges[1:]) / 2
+
+    def rgba(point: np.ndarray) -> np.ndarray:
+        # How far along the arrow this vertex lies, 0 at the base, 1 at the tip.
+        s = np.clip(float(np.dot(point - start, axis) / axis_sq), 0.0, 1.0)
+        # np.interp clamps at the ends, so the first and last colours stay pure
+        # beyond their centres instead of fading out.
+        rgb = [np.interp(s, centers, rgbs[:, i]) for i in range(3)]
+        return np.array([*rgb, opacity])
+
+    return rgba
+
+
 def build_vector_3d(
     start: np.ndarray,
     end: np.ndarray,
     thickness: float = VEC_THICKNESS,
     color=VEC_COLOR,
+    gradient=None,
+    weights=None,
 ) -> m.Group:
     """A genuine 3D arrow: a cylindrical shaft capped with a cone. Unlike a flat
     stroke arrow it keeps its solidity as the camera orbits, so r(t) reads as an
@@ -176,6 +226,9 @@ def build_vector_3d(
 
     `thickness` is the shaft diameter; the head scales with it so the arrow stays
     proportioned at any weight.
+
+    Pass `gradient` (a sequence of colours, optionally weighted by `weights`) to
+    paint the arrow base-to-tip instead of filling it with a single `color`.
     """
     direction = end - start
     length = m.get_norm(direction)
@@ -190,7 +243,12 @@ def build_vector_3d(
     head.move_to(neck + unit * head_length / 2)
 
     arrow = m.Group(shaft, head)
-    arrow.set_color(color)
+    if gradient is None:
+        arrow.set_color(color)
+    else:
+        rgba_func = axis_gradient_rgba_func(start, end, gradient, weights)
+        for part in arrow:
+            part.set_color_by_rgba_func(rgba_func)
     return arrow
 
 
@@ -261,6 +319,9 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
     t_bar = build_t_bar()
 
     t_tracker = m.ValueTracker(0.0)
+    # Bind the slider to t straight away, so the pointer and readout sit at t = 0
+    # from the moment the bar fades in rather than snapping into place later.
+    attach_t_updaters(t_bar, t_tracker)
 
     # ---- the growing flight path: a partial of the full trajectory ----
     full_path = m.ParametricCurve(
@@ -319,12 +380,11 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
 
     s.wait_for_button("Press SPACE to launch ")
 
-    # Wire up everything that is driven by t, then sweep t from 0 to T_MAX.
+    # Wire up the rest of what is driven by t, then sweep t from 0 to T_MAX.
     # The path draws, the vector traces, the ball flies, and the slider and
     # readout advance — all locked to the same clock.
     drawn_path.add_updater(grow_path)
     r_tag.add_updater(place_tag)
-    attach_t_updaters(t_bar, t_tracker)
     s.add(drawn_path, ball, r_tag)
 
     s.play(
@@ -352,7 +412,14 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
     # Only now does the output vector itself appear, drawn from the origin out to
     # the apex. Holding it back until the flight is over keeps the trace clean and
     # makes r(t) land as the thing we are about to take apart.
-    vector = build_vector_3d(origin, point_at(axes, T_PEAK))
+    # It wears a gradient through the three component colours, each holding the
+    # share of the arrow that its leg of the staircase contributes — so before a
+    # single dashed line is drawn, the arrow already looks like x plus y plus z.
+    vector = build_vector_3d(
+        origin, point_at(axes, T_PEAK),
+        gradient=COMPONENT_COLORS,
+        weights=staircase_legs(axes, T_PEAK),
+    )
     s.play(m.ShowCreation(vector), run_time=1.0)
 
     breakdown = build_apex_breakdown(axes)
