@@ -14,12 +14,14 @@ import manimlib as m
 # order traces its flight path through 3D space.
 #
 #   r(t) = ( x(t), y(t), z(t) )
-#          (  3.6 t ,  2.0 t ,  9.8 t - 4.9 t^2  )
+#          (  3.6 t ,  2.0 t ,  5.0 t - 2.5 t^2  )
 #
 # The numbers are chosen so the flight reads cleanly: launch at t = 0, land at
-# t = 2 s, peak height 4.9 at t = 1 s (symmetric arc), and the ground track
-# stays inside the axes.
-G = 9.8
+# t = 2 s, peak height 2.5 at t = 1 s (symmetric arc), and the ground track
+# stays inside the axes. The height scale is deliberately modest so the whole
+# z axis fits in the tilted camera view alongside the header and the t slider.
+G = 5.0
+V0 = 5.0
 T_MAX = 2.0          # flight time, seconds
 T_PEAK = T_MAX / 2   # apex, where the component breakdown is shown
 
@@ -33,7 +35,7 @@ def y_of(t):
 
 
 def z_of(t):
-    return 9.8 * t - 0.5 * G * t**2
+    return V0 * t - 0.5 * G * t**2
 
 
 FONT = "Century"
@@ -45,9 +47,13 @@ Y_COLOR = m.GREEN_B    # cross-range
 Z_COLOR = m.BLUE_B     # height
 VEC_COLOR = m.YELLOW_B  # the output vector r(t) itself
 
-THETA = -60           # camera azimuth, degrees
+# Shaft diameter of the 3D r(t) arrow, in scene units. Kept slim on purpose:
+# the arrow has to sit on top of the flight path without swallowing it.
+VEC_THICKNESS = 0.04
+
+THETA = -20           # camera azimuth, degrees
 PHI = 70              # camera tilt, degrees
-RADIUS = 12.0         # camera distance from the axes' centre
+RADIUS = 16.0         # camera distance from the axes' centre
 ROTATION_RATE = 0.12  # radians per second of ambient rotation
 
 
@@ -76,10 +82,10 @@ def build_formula() -> m.Tex:
         r"\mathbf{r}(t)": VEC_COLOR,
         r"3.6\,t": X_COLOR,
         r"2.0\,t": Y_COLOR,
-        r"9.8\,t - 4.9\,t^{2}": Z_COLOR,
+        r"5.0\,t - 2.5\,t^{2}": Z_COLOR,
     }
     formula = m.Tex(
-        r"\mathbf{r}(t) = (\, 3.6\,t \,,\, 2.0\,t \,,\, 9.8\,t - 4.9\,t^{2} \,)",
+        r"\mathbf{r}(t) = (\, 3.6\,t \,,\, 2.0\,t \,,\, 5.0\,t - 2.5\,t^{2} \,)",
         isolate=list(parts.keys()),
         font_size=26,
     )
@@ -95,10 +101,10 @@ def build_axes() -> tuple[m.ThreeDAxes, m.VGroup]:
     axes = m.ThreeDAxes(
         x_range=(0, 8, 1),
         y_range=(0, 5, 1),
-        z_range=(0, 5, 1),
+        z_range=(0, 3, 1),
         width=7.5,
         height=4.7,
-        depth=4.0,
+        depth=2.8,
     )
     x_label = axes.get_x_axis_label("x", buff=0.4).set_color(X_COLOR)
     y_label = axes.get_y_axis_label("y", buff=0.4).set_color(Y_COLOR)
@@ -158,6 +164,36 @@ def attach_t_updaters(t_bar: dict, t_tracker: m.ValueTracker) -> None:
     move_pointer(pointer)
 
 
+def build_vector_3d(
+    start: np.ndarray,
+    end: np.ndarray,
+    thickness: float = VEC_THICKNESS,
+    color=VEC_COLOR,
+) -> m.Group:
+    """A genuine 3D arrow: a cylindrical shaft capped with a cone. Unlike a flat
+    stroke arrow it keeps its solidity as the camera orbits, so r(t) reads as an
+    object living in the same space as the trajectory.
+
+    `thickness` is the shaft diameter; the head scales with it so the arrow stays
+    proportioned at any weight.
+    """
+    direction = end - start
+    length = m.get_norm(direction)
+    unit = direction / length
+
+    # Cap the head so it never eats more than a third of a short vector.
+    head_length = min(7 * thickness, 0.3 * length)
+    neck = end - unit * head_length
+
+    shaft = m.Line3D(start, neck, width=thickness)
+    head = m.Cone(radius=2.5 * thickness, height=head_length, axis=unit)
+    head.move_to(neck + unit * head_length / 2)
+
+    arrow = m.Group(shaft, head)
+    arrow.set_color(color)
+    return arrow
+
+
 def build_apex_breakdown(axes: m.ThreeDAxes) -> dict:
     """At the apex, take the output vector apart into its three components: a
     dashed staircase origin -> x -> y -> z that lands exactly on the ball,
@@ -194,6 +230,30 @@ def build_apex_breakdown(axes: m.ThreeDAxes) -> dict:
     )
 
 
+def build_apex_value_label(axes: m.ThreeDAxes) -> m.Tex:
+    """The concrete output at the apex, floating above the ball: the same tuple
+    the formula promises, now filled in with numbers. Each component wears its
+    axis colour, so the label, the dashed staircase and the formula all point at
+    the same three quantities."""
+    x0, y0, z0 = x_of(T_PEAK), y_of(T_PEAK), z_of(T_PEAK)
+    xs, ys, zs = f"{x0:.1f}", f"{y0:.1f}", f"{z0:.1f}"
+
+    label = m.Tex(
+        rf"\mathbf{{r}}({T_PEAK:.1f}) = (\, {xs} \,,\, {ys} \,,\, {zs} \,)",
+        isolate=[r"\mathbf{r}", xs, ys, zs],
+        font_size=28,
+    )
+    label.select_parts(r"\mathbf{r}").set_color(VEC_COLOR)
+    for sub, color in ((xs, X_COLOR), (ys, Y_COLOR), (zs, Z_COLOR)):
+        label.select_parts(sub).set_color(color)
+
+    # Stand it upright toward the camera, like the component labels, and park it
+    # just above the ball.
+    label.rotate(90 * m.DEGREES, axis=m.RIGHT)
+    label.next_to(axes.c2p(x0, y0, z0), m.OUT, buff=0.3)
+    return label
+
+
 def vector_valued_functions(s: MainTheatreScene) -> None:
     header = build_header()
     formula = build_formula()
@@ -221,18 +281,7 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
         mob.pointwise_become_partial(full_path, 0, alpha)
         mob.set_stroke(VEC_COLOR, width=4)
 
-    # ---- the tracing vector: origin -> current position ----
     origin = axes.c2p(0, 0, 0)
-
-    def draw_vector():
-        p = point_at(axes, t_tracker.get_value())
-        if m.get_norm(p - origin) < 0.2:
-            return m.VectorizedPoint(origin)  # too short to draw cleanly yet
-        arrow = m.Arrow(origin, p, buff=0, thickness=3.5)
-        arrow.set_color(VEC_COLOR)
-        return arrow
-
-    vector = m.always_redraw(draw_vector)
 
     # ---- the projectile itself: a small sphere at the drawing head ----
     ball = m.Sphere(radius=0.11)
@@ -276,7 +325,7 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
     drawn_path.add_updater(grow_path)
     r_tag.add_updater(place_tag)
     attach_t_updaters(t_bar, t_tracker)
-    s.add(drawn_path, vector, ball, r_tag)
+    s.add(drawn_path, ball, r_tag)
 
     s.play(
         t_tracker.animate.set_value(T_MAX),
@@ -289,10 +338,22 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
 
     s.wait_for_button()
 
+    # Stop the orbit and swing back to the launch view. The breakdown labels are
+    # built upright for this exact orientation, so they only read cleanly once
+    # the camera is home again.
+    frame.remove_updater(rotate)
+    s.play(frame.animate.reorient(THETA, PHI), run_time=1.0)
+
     # ---- rewind to the apex and break the output vector into components ----
     r_tag.clear_updaters()
     s.play(m.FadeOut(r_tag), run_time=0.3)
     s.play(t_tracker.animate.set_value(T_PEAK), run_time=1.2)
+
+    # Only now does the output vector itself appear, drawn from the origin out to
+    # the apex. Holding it back until the flight is over keeps the trace clean and
+    # makes r(t) land as the thing we are about to take apart.
+    vector = build_vector_3d(origin, point_at(axes, T_PEAK))
+    s.play(m.ShowCreation(vector), run_time=1.0)
 
     breakdown = build_apex_breakdown(axes)
     s.play(
@@ -308,18 +369,20 @@ def vector_valued_functions(s: MainTheatreScene) -> None:
         run_time=0.7,
     )
 
+    # With all three components named, collect them back into a single value.
+    value_label = build_apex_value_label(axes)
+    s.play(m.Write(value_label), run_time=0.9)
+
     s.wait_for_button()
 
     # ---- tear down ----
-    frame.remove_updater(rotate)
     ball.clear_updaters()
     t_bar["pointer"].clear_updaters()
     t_bar["value"].clear_updaters()
-    vector.clear_updaters()
 
     everything = m.Group(
         header, formula, axes, axis_labels, t_bar["group"],
-        drawn_path, vector, ball, *breakdown.values(),
+        drawn_path, vector, ball, value_label, *breakdown.values(),
     )
     s.play(m.FadeOut(everything), run_time=0.6)
     frame.to_default_state()

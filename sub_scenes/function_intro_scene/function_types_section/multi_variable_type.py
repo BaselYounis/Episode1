@@ -34,22 +34,6 @@ examples = [
         ],
     },
     {
-        # The Gaussian solution of the heat equation: as time passes the
-        # peak temperature dies down while the same heat spreads ever wider,
-        # so the red hot spot flattens and fades toward a cool blue plate.
-        "name": "Temperature",
-        "description": "A hot spot on a metal plate — the heat spreads and cools with time",
-        "legend": r"$x, y$ : position on the plate $\quad$ $t$ : time $\quad$ $Z$ : temperature",
-        "mapping": r"a vector $(x, y, t) \in \mathbb{R}^3$ maps to a single scalar $z \in \mathbb{R}$",
-        "func": lambda x, y, t: (
-            2.5 / (1 + t / 2) * np.exp(-(x**2 + y**2) / (3 * (1 + t / 2)))
-        ),
-        "z_range": (-1, 3, 1),
-        "colorscale": [(m.BLUE_D, 0.0), (m.YELLOW, 1.2), (m.RED, 2.4)],
-        "animated": True,
-        "t_max": 16.0,
-    },
-    {
         # Real seas are a superposition of traveling waves: a dominant swell,
         # a weaker crossing swell, and small ripples — each with its own
         # direction and speed, so the height at every point keeps changing.
