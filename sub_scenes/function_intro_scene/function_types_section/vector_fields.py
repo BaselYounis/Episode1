@@ -8,6 +8,27 @@ if TYPE_CHECKING:
 from helpers import mixed_tex_parser
 import manimlib as m
 
+# ---- how big each arrow of the field is drawn -------------------------------
+# VECT_WIDTH is the stroke thickness of the shaft; the arrow head is sized off
+# it, so head and shaft grow together.
+#
+# VECT_HEIGHT is the drawn length of every arrow, as a fraction of the spacing
+# between neighbouring samples (1.0 would have each arrow reach exactly to the
+# next sample point). manimlib normally draws each arrow at (a squashed multiple
+# of) its own magnitude, which says the same thing the colour map already says
+# and shrinks the slow regions near the vortex centres to invisible stubs. Every
+# arrow is drawn at this one length instead, so the grid reads as pure direction
+# and speed is left entirely to the colour. See UniformVectorField.
+VECT_WIDTH = 1.7
+VECT_HEIGHT = 0.78
+
+# Thickness of the input arrow — the one that grows from the origin out to the
+# point being probed. Not the same unit as VECT_WIDTH: an Arrow is a filled
+# shape rather than a stroke, and its shaft comes out at 0.015 scene units per
+# unit of thickness (manimlib's Arrow.tickness_multiplier), so this is roughly
+# twice the number that would draw the same width as a stroke.
+IN_VECT_WIDTH = 1.75
+
 # A multivariable vector-valued function takes a *vector* in and hands a
 # *vector* back. Fluid flow is the cleanest picture of this: feed it a point
 # (x, y) in the plane and it returns the velocity (u, v) of the fluid there.
@@ -41,28 +62,23 @@ def flow_field(*args: np.ndarray | float) -> np.ndarray:
 
 FONT = "Century"
 
-# Arrow length, as a fraction of the spacing between neighbouring samples.
-# manimlib draws each arrow at (a squashed multiple of) its own magnitude, which
-# says the same thing the colour map already says and shrinks the slow regions
-# near the vortex centres to invisible stubs. Every arrow is drawn at this one
-# short length instead, so the grid reads as pure direction and speed is left
-# entirely to the colour. See UniformVectorField.
-VECT_LEN_TO_STEP = 0.55
-
 IN_COLOR = m.TEAL_B  # the input vector: a position (x, y)
 OUT_COLOR = m.YELLOW_B  # the output vector: the velocity F(x, y)
 U_COLOR = m.RED_B  # first output component
 V_COLOR = m.BLUE_B  # second output component
 
-# Only the positive quadrant is shown, blown up to fill the frame. At K = 1 a
-# swirl cell is pi wide, so this box holds exactly two counter-rotating cells,
-# and both axes are themselves stream lines (u = 0 on x = 0, v = 0 on y = 0):
-# the fluid never crosses the boundary, so cropping to the first quadrant is
-# honest rather than arbitrary. Width and height are picked to keep the
-# coordinate units square (12.0 / 2pi == 6.0 / pi), so the swirls read as round.
-X_RANGE = (0, 2 * np.pi, 1)
+# Exactly one swirl cell, blown up to fill the frame's height. At K = 1 the
+# field turns over every pi in each direction — F(x + pi, y) = -F(x, y), the
+# same swirl running the other way — so a wider box would only show mirrored
+# copies of what is already on screen. Cropping to one period in x keeps every
+# arrow in the picture saying something new. All four edges are themselves
+# stream lines (u = 0 on x = 0 and x = pi, v = 0 on y = 0 and y = pi), so the
+# fluid never crosses the boundary and the crop is honest rather than arbitrary.
+# Width and height match because the ranges do, which keeps the coordinate units
+# square (6.0 / pi each way), so the swirl reads as round.
+X_RANGE = (0, np.pi, 1)
 Y_RANGE = (0, np.pi, 1)
-PLANE_WIDTH = 12.0
+PLANE_WIDTH = 6.0
 PLANE_HEIGHT = 6.0
 
 # How densely the plane is sampled. Turn these up for more arrows / more flow
@@ -74,8 +90,8 @@ PLANE_HEIGHT = 6.0
 # header, in this layout. Dividing evenly lands the outermost samples exactly on
 # the boundary instead, which is also what lets drop_boundary_vectors recognise
 # and remove them.
-FIELD_COLUMNS = 26  # arrow columns across the box; halved for the rows
-FLOW_COLUMNS = 18  # stream-line seed columns
+FIELD_COLUMNS = 17  # arrow columns across the box; the rows match, the box being square
+FLOW_COLUMNS = 9  # stream-line seed columns
 FIELD_DENSITY = FIELD_COLUMNS / X_RANGE[1]  # arrows per coordinate-unit
 FLOW_DENSITY = FLOW_COLUMNS / X_RANGE[1]  # seeds per coordinate-unit
 
@@ -87,6 +103,11 @@ FLOW_DENSITY = FLOW_COLUMNS / X_RANGE[1]  # seeds per coordinate-unit
 PROBE_TARGET = (1.15, 1.15)
 FIELD_DIM_OPACITY = 0.22  # what the rest of the field fades to while probing
 PROBE_WIDTH_BOOST = 2.0  # how much the probed arrow thickens
+# How much room to leave around the probe once the camera has pushed in on it.
+# 1.0 would crop to the input arrow and the two labels exactly; above that is
+# breathing space, and the surrounding field stays visible in the margin so the
+# lit vector is still read against its neighbours rather than in isolation.
+PROBE_ZOOM_MARGIN = 1.45
 
 # The colour bar that names the field's colour map. Colour is the only thing
 # left carrying magnitude once every arrow is the same length, so it needs a key.
@@ -118,7 +139,7 @@ class UniformVectorField(m.VectorField):
     that colour to speak for itself.
     """
 
-    def __init__(self, *args, len_to_step: float = VECT_LEN_TO_STEP, **kwargs):
+    def __init__(self, *args, len_to_step: float = VECT_HEIGHT, **kwargs):
         self.len_to_step = len_to_step
         self.vect_len = None  # measured off the untrimmed grid, on first draw
         super().__init__(*args, **kwargs)  # ends by calling update_vectors()
@@ -153,7 +174,7 @@ class UniformVectorField(m.VectorField):
         points[4::8] = points[2::8]
         points[6::8] = bases + self.vect_len * units
         for i in (1, 3, 5):
-            points[i::8] = 0.5 * (points[i - 1::8] + points[i + 1::8])
+            points[i::8] = 0.5 * (points[i - 1 :: 8] + points[i + 1 :: 8])
         points[7::8] = points[6:-1:8]
 
         # The base class thins any arrow shorter than its own head; at a
@@ -167,7 +188,7 @@ class UniformVectorField(m.VectorField):
 class InteriorStreamLines(m.StreamLines):
     """Stream lines seeded strictly inside the box.
 
-    Each of the four edges is itself a stream line (u = 0 on x = 0 and x = 2pi,
+    Each of the four edges is itself a stream line (u = 0 on x = 0 and x = pi,
     v = 0 on y = 0 and y = pi), so a seed landing on one produces a flash that
     slides flat along the axis or the border — animated frame decoration rather
     than fluid. This is the same rule drop_boundary_vectors applies to the
@@ -209,9 +230,9 @@ def build_formula() -> m.Tex:
     )
     for sub, color in parts.items():
         formula.select_parts(sub).set_color(color)
-    formula.to_corner(m.UL, buff=0.35).shift(m.DOWN * 1.05)
-    formula.add_background_rectangle(opacity=0.6, buff=0.12)
+    formula.to_corner(m.UL, buff=0.35).shift(m.DOWN * 0.5).shift(m.RIGHT * 0.1)
     formula.fix_in_frame()
+
     return formula
 
 
@@ -249,8 +270,7 @@ def build_legend(field: m.VectorField) -> m.VGroup:
 
     legend = m.VGroup(bar, border, caption, ticks)
     # Pinned opposite the formula, at the same height, so the two frame the field.
-    legend.to_corner(m.UR, buff=0.35).shift(m.DOWN * 1.05)
-    legend.add_background_rectangle(opacity=0.6, buff=0.12)
+    legend.to_corner(m.UL, buff=0.35).shift(m.DOWN * 1.2)
     legend.fix_in_frame()
     return legend
 
@@ -310,19 +330,20 @@ def build_probe(plane: m.NumberPlane, field: m.VectorField) -> dict:
     base = field.sample_points[index]
     tip = field.get_points()[8 * index + 6]
 
-    input_arrow = m.Arrow(plane.get_origin(), base, buff=0, thickness=3)
+    input_arrow = m.Arrow(plane.get_origin(), base, buff=0, thickness=IN_VECT_WIDTH)
     input_arrow.set_color(IN_COLOR)
     input_arrow.set_opacity(0.85)
-    input_dot = m.Dot(base, radius=0.06).set_color(IN_COLOR)
+    input_dot = m.Dot(base, radius=0.03).set_color(IN_COLOR)
     input_dot.set_stroke(m.WHITE, width=1)
 
     # The velocity runs down-and-right from the point, so up-and-right is free.
     input_label = m.Tex("(x, y)", font_size=30).set_color(IN_COLOR)
     input_label.next_to(base, m.UR, buff=0.1)
+    input_label.scale(0.75)  # the label is a little big for the arrow, so shrink it
 
     output_label = m.Tex(r"\mathbf{F}(x, y)", font_size=30).set_color(OUT_COLOR)
     output_label.next_to(tip, m.DR, buff=0.1)
-
+    output_label.scale(0.75)
     return dict(
         index=index,
         input_arrow=input_arrow,
@@ -330,6 +351,41 @@ def build_probe(plane: m.NumberPlane, field: m.VectorField) -> dict:
         input_label=input_label,
         output_label=output_label,
     )
+
+
+def probe_focus(frame: m.CameraFrame, probe: dict) -> tuple[np.ndarray, float]:
+    """Where to put the camera, and how tall to make it, to fill it with the probe.
+
+    Measured off the probe's own mobjects rather than written down as numbers, so
+    the framing follows PROBE_TARGET and the grid density if either is retuned.
+    The input arrow runs from the origin to the point being probed and the output
+    label sits just past the tip of F(x, y), so their union is exactly the picture
+    that has to stay on screen. Fitting the width as well as the height matters
+    because setting a frame's height scales it uniformly: a probe wider than it is
+    tall would otherwise be cropped at the sides.
+
+    The frame is then held over the box. The probe is anchored at the origin,
+    which is the *corner* of a one-quadrant plane, so a frame centred on the probe
+    alone would spill past two edges of the field and fill a quarter of the shot
+    with the black outside it. Sliding it back in keeps every part of the zoom
+    looking at field. On an axis where the frame is simply too big to fit, it
+    centres on the box instead and the overhang is split evenly.
+    """
+    focus = m.VGroup(probe["input_arrow"], probe["input_label"], probe["output_label"])
+    extent = max(focus.get_height(), focus.get_width() / frame.get_aspect_ratio())
+    height = PROBE_ZOOM_MARGIN * extent
+    spans = (height * frame.get_aspect_ratio(), height)
+
+    center = focus.get_center().copy()
+    low, high = PLANE.get_corner(m.DL), PLANE.get_corner(m.UR)
+    for axis, span in enumerate(spans):
+        if high[axis] - low[axis] <= span:
+            center[axis] = 0.5 * (low[axis] + high[axis])
+        else:
+            center[axis] = np.clip(
+                center[axis], low[axis] + span / 2, high[axis] - span / 2
+            )
+    return center, height
 
 
 def set_probe_highlight(
@@ -388,7 +444,9 @@ PLANE.faded_lines.set_submobjects(
     [
         line
         for line in PLANE.faded_lines
-        if (np.maximum(line.get_start(), line.get_end())[:2] <= _BOX_UR[:2] + 1e-6).all()
+        if (
+            np.maximum(line.get_start(), line.get_end())[:2] <= _BOX_UR[:2] + 1e-6
+        ).all()
     ]
 )
 
@@ -397,7 +455,7 @@ FIELD = UniformVectorField(
     PLANE,
     density=FIELD_DENSITY,
     magnitude_range=(0, 1.0),
-    stroke_width=3,
+    stroke_width=VECT_WIDTH,
 )
 drop_boundary_vectors(FIELD)
 
@@ -411,9 +469,11 @@ STREAM_LINES = InteriorStreamLines(
     # recognise the boundary seeds and drop them.
     noise_factor=0.0,
     stroke_width=2.0,
-    # The same colour map and range as the arrows, so the legend still reads
-    # once the field dims and the flow takes over.
-    color_by_magnitude=True,
+    # A single cyan for every line rather than the arrows' magnitude colour map:
+    # once the field dims, the flow reads as one moving fluid instead of a second
+    # copy of the speed key.
+    color_by_magnitude=False,
+    stroke_color="#00FFFF",
     magnitude_range=(0, 1.0),
     stroke_opacity=0.9,
 )
@@ -422,7 +482,11 @@ STREAM_LINES = InteriorStreamLines(
 # interior seed that lands on one, before it reaches the passing-flash animation,
 # which would have nothing to walk along.
 STREAM_LINES.set_submobjects(
-    [line for line in STREAM_LINES if m.get_norm(np.ptp(line.get_points(), axis=0)) > 1e-3]
+    [
+        line
+        for line in STREAM_LINES
+        if m.get_norm(np.ptp(line.get_points(), axis=0)) > 1e-3
+    ]
 )
 FLOW = m.AnimatedStreamLines(STREAM_LINES)
 
@@ -432,6 +496,15 @@ def vector_fields(s: MainTheatreScene) -> None:
     formula = build_formula()
     legend = build_legend(FIELD)
     probe = build_probe(PLANE, FIELD)
+
+    # The camera pushes in on the probed vector and pulls back out again when the
+    # flow is released. Where it starts is recorded now, and get_center hands back
+    # a live view into the frame's own points, so it has to be copied or "home"
+    # would drift along with the zoom. The header, formula and legend are all
+    # fixed in frame and so sit out both moves.
+    frame = s.camera.frame
+    home_center, home_height = frame.get_center().copy(), frame.get_height()
+    focus_center, focus_height = probe_focus(frame, probe)
 
     # ================= ANIMATE =================
     s.play(m.FadeIn(header, shift=m.DOWN * 0.3))
@@ -488,7 +561,12 @@ def vector_fields(s: MainTheatreScene) -> None:
         run_time=0.9,
     )
     # Now say which vector that is: the rest of the field falls back, the one
-    # arrow at (x, y) lights up, and both ends get their name.
+    # arrow at (x, y) lights up, and both ends get their name. The camera pushes
+    # in on it at the same time — every arrow is drawn short so the grid can be
+    # dense, which leaves the one being singled out too small to look at on its
+    # own until the frame comes down around it. The legend is fixed in frame, so
+    # the zoom would leave it floating over a close-up it no longer keys; it fades
+    # out with the push-in and comes back when the camera pulls out.
     s.play(
         m.UpdateFromAlphaFunc(
             FIELD,
@@ -496,27 +574,52 @@ def vector_fields(s: MainTheatreScene) -> None:
                 mob, probe["index"], base_rgba, base_widths, a
             ),
         ),
-        m.Write(probe["input_label"]),
-        m.Write(probe["output_label"]),
-        run_time=0.9,
+        m.FadeOut(legend, shift=m.UP * 0.2),
+        frame.animate.move_to(focus_center).set_height(focus_height),
+        run_time=1.4,
     )
-
+    s.wait_for_button()
+    s.play(
+        m.Write(probe["input_label"]),
+    )
+    s.wait_for_button()
+    s.play(
+        m.Write(probe["output_label"]),
+    )
     s.wait_for_button("Press SPACE to release the flow ")
 
-    # Turn the static arrows into moving fluid: dim the field, clear the probe,
-    # and let stream lines drift along it so the swirls read as real flow. The
+    # Turn the static arrows into moving fluid: pull the camera back out to the
+    # whole swirl, dim the field, clear the probe, and let stream lines drift
+    # along it so the swirls read as real flow. The zoom belongs to this beat —
+    # a single point was the subject a moment ago, the whole cell is now. The
     # highlight is undone first, since set_stroke sets one opacity for the whole
     # field and would otherwise strand the probed arrow yellow and bright.
     probe_group = m.VGroup(
         *(part for part in probe.values() if isinstance(part, m.Mobject))
     )
-    FIELD.data["stroke_rgba"][:] = base_rgba
-    FIELD.get_stroke_widths()[:] = base_widths
-    FIELD.note_changed_data()
+    # Cross-fade straight from the probed look to the released one instead of
+    # snapping the whole field back to full opacity first and then dimming it: the
+    # dimmed neighbours already sit at 0.22, a hair off the final 0.25, so
+    # animating from where they are keeps the field from flashing bright in the gap
+    # between the probe and the flow. The probed arrow still un-highlights over the
+    # same beat — yellow back to its magnitude colour, thickness and opacity back
+    # to the field's rest values.
+    probed_rgba = FIELD.data["stroke_rgba"].copy()
+    probed_widths = FIELD.get_stroke_widths().copy()
+    released_rgba = base_rgba.copy()
+    released_rgba[:, 3] = 0.25
+
+    def release_field(mob, a):
+        mob.data["stroke_rgba"][:] = m.interpolate(probed_rgba, released_rgba, a)
+        mob.get_stroke_widths()[:] = m.interpolate(probed_widths, base_widths, a)
+        mob.note_changed_data()
+
     s.play(
         m.FadeOut(probe_group),
-        FIELD.animate.set_stroke(opacity=0.25),
-        run_time=0.8,
+        m.FadeIn(legend, shift=m.DOWN * 0.2),
+        m.UpdateFromAlphaFunc(FIELD, release_field),
+        frame.animate.move_to(home_center).set_height(home_height),
+        run_time=1.2,
     )
     s.add(FLOW)
 
