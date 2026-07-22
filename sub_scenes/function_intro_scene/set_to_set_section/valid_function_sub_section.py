@@ -44,6 +44,7 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
         m.ShowCreation(arrow_c_to_2),
         m.ShowCreation(arrow_d_to_3),
     )
+    s.wait_for_button()
     s.play(m.FadeIn(valid_function_text, shift=m.UP * 0.5))
     s.wait_for_button()
     s.play(
@@ -53,5 +54,5 @@ def valid_function_sub_section(s: MainTheatreScene, x_set: Set, y_set: Set) -> N
         m.FadeOut(arrow_c_to_2),
         m.FadeOut(arrow_d_to_3),
     )
-    s.wait_for_button()
+    
     

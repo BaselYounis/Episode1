@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from matplotlib.pylab import f
+
 import numpy
 
 from helpers import mixed_tex_parser

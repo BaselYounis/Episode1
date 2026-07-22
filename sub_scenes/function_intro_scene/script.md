@@ -1,60 +1,21 @@
-# Function Intro Scene — Script
+/*The Formal Definition Text Scene*/
+The function is a mapping between two sets let's call them X,Y respectively
+such that no element of the set X can only map one and only one element of the set Y
 
-But what is a function?
+/*The Two Sets & Their Arrows Get Drawn*/
+In this example each element from the set X
+maps to an element from the set Y
+even though the elements b & c map to the same element, this is completely fine and valid function
 
-> 🎬 show this text on the screen then fade out
+/*The arrows get transformed to the invalid case*/
+But In this example we have the element a mapping to the elements 1 & 2, this contradicts the definition and makes it an invalid function
 
----
-
-
-> 🎬 show the formal definition of the function
-
-A function is a mapping between two sets such that each element from the set X (called the function domain) maps to one and only one element of set Y (called the range)
-
----
-
-> 🎬 show the x domain set
-
-For example we have the set **a , b, c**
-
-> 🎬 show the y domain set
-
-Mapping to the set **1 , 2 , 3**
-
----
-
-> 🎬 show an arrow from a,b pointing to the element 1
-
-> ✅ highlight with a check mark that this is a valid function
-
-For example **a**, **b** can map to the same element... for example : **1**
-
----
-
-> 🎬 show an arrow from a pointing to the element 1 , 2
-
-> ❌ highlight with a X mark that this is an invalid function
-
-But also for example **a** cannot point to **1 , 2** at the same time — this violates the definition of the function 
-
----
-
-> 🎬 transform the elements of both sets to match the given example below
-
-What this definition says is that functions are a mathematical tool that basically models the real world, because for example when measuring the velocity of a vehicle... 
-> 🎬 show in the middle the tex f(0s) = 0km/h and f(5s) = 0km/h f(10s) = 20km/h
-> 🎬 highlight that this makes sense with a green checkmark
-
-> 🎬 show now the invalid arrows of the function and show on the middle f(0s) = 0km/h & f(0s) = 5km/h
-> 🎬 highlight that this does not make sense with an red X mark
+/*The Arrows Transform to the real life car example*/
+A real life example that clarifies why the function is defined in the way it is, Is a car
+at the 0th second the car velocity is 0km/h,
 
 
 
 
-The type of elements of each set is arbitrary. We might have a mapping between:
 
-1. Two sets of real numbers *(ordinary single variable functions)*
-2. A set of vectors and a set of real numbers *(multi variable functions)*
-3. A set of real numbers and a set of vectors *(vector functions / parametric curves)*
-4. A set of vectors to a set of vectors *(vector fields)*
-5. A set of sets to a set of sets *(sorting algorithms...)*
+

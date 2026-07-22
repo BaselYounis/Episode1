@@ -40,6 +40,7 @@ def car_velocity_example_sub_section(
         m.ShowCreation(arrow_c_to_2),
         m.ShowCreation(arrow_d_to_3),
     )
+    s.wait_for_button()
     s.play(
         m.FadeIn(f_of_0s, shift=m.UP * 0.5),
     )
@@ -58,4 +59,3 @@ def car_velocity_example_sub_section(
         m.FadeOut(arrow_c_to_2),
         m.FadeOut(arrow_d_to_3),        
     )
-    s.wait_for_button()

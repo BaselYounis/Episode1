@@ -53,11 +53,12 @@ def set_to_set_section(s: MainTheatreScene) -> None:
     set_group.next_to(function_def, m.DOWN, buff=0.6)
     set_group.shift(m.RIGHT * 1.25)
     s.play(m.Write(narrative_text), m.FadeIn(line), m.Write(function_def))
+    s.wait_for_button()
     s.play(x_set.get_creation_animation(), y_set.get_creation_animation())
     valid_function_sub_section(s, x_set, y_set)
     invalid_function_sub_section(s, x_set, y_set)
-    car_velocity_example_sub_section(s, x_set, y_set)
     invalid_car_velocity_example(s, x_set, y_set)
+    car_velocity_example_sub_section(s, x_set, y_set)
     scene_mobjects = [
         narrative_text,
         line,

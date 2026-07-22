@@ -40,10 +40,10 @@ def flow_field(coords: np.ndarray) -> np.ndarray:
 
 FONT = "Century"
 
-IN_COLOR = m.TEAL_B      # the input vector: a position (x, y)
-OUT_COLOR = m.YELLOW_B   # the output vector: the velocity F(x, y)
-U_COLOR = m.RED_B        # first output component
-V_COLOR = m.BLUE_B       # second output component
+IN_COLOR = m.TEAL_B  # the input vector: a position (x, y)
+OUT_COLOR = m.YELLOW_B  # the output vector: the velocity F(x, y)
+U_COLOR = m.RED_B  # first output component
+V_COLOR = m.BLUE_B  # second output component
 
 # The plane is sized so its coordinate ranges fill most of the frame at one
 # screen-unit per coordinate-unit (13.0 x 7.2), leaving room for the header.
@@ -53,7 +53,7 @@ Y_RANGE = (-3.6, 3.6, 1)
 # How densely the plane is sampled. Turn these up for more arrows / more flow
 # lines (denser but busier and slower to build), down for a sparser picture.
 FIELD_DENSITY = 2.6  # arrows per coordinate-unit in the vector grid
-FLOW_DENSITY = 2.2   # seed density for the animated stream lines
+FLOW_DENSITY = 2.2  # seed density for the animated stream lines
 
 # One point to probe. The position points up-and-right while the velocity there
 # points down-and-right, so the picture makes plain that the output vector is
@@ -67,7 +67,8 @@ def build_header() -> m.VGroup:
     subtitle = mixed_tex_parser.convert_tex_to_vgroup(
         r"a vector $(x, y) \in \mathbb{R}^2$ maps to a vector "
         r"$\mathbf{F}(x, y) \in \mathbb{R}^2$",
-        font=FONT, font_size=20,
+        font=FONT,
+        font_size=20,
     )
     subtitle.set_color(m.GREY_A)
     header = m.VGroup(title, subtitle).arrange(m.DOWN, buff=0.14)
@@ -128,8 +129,11 @@ def build_probe(plane: m.NumberPlane) -> dict:
     output_label.next_to(tip, m.DR, buff=0.1)
 
     return dict(
-        input_arrow=input_arrow, input_dot=input_dot, input_label=input_label,
-        output_arrow=output_arrow, output_label=output_label,
+        input_arrow=input_arrow,
+        input_dot=input_dot,
+        input_label=input_label,
+        output_arrow=output_arrow,
+        output_label=output_label,
     )
 
 
@@ -139,19 +143,23 @@ def build_probe(plane: m.NumberPlane) -> dict:
 PLANE = m.NumberPlane(
     x_range=X_RANGE,
     y_range=Y_RANGE,
-    background_line_style=dict(stroke_color=m.BLUE_E, stroke_width=1, stroke_opacity=0.35),
+    background_line_style=dict(
+        stroke_color=m.BLUE_E, stroke_width=1, stroke_opacity=0.35
+    ),
     faded_line_ratio=1,
 )
 
 FIELD = m.VectorField(
-    flow_field, PLANE,
+    flow_field,
+    PLANE,
     density=FIELD_DENSITY,
     magnitude_range=(0, 1.0),
     stroke_width=3,
 )
 
 STREAM_LINES = m.StreamLines(
-    flow_field, PLANE,
+    flow_field,
+    PLANE,
     density=FLOW_DENSITY,
     stroke_width=2.0,
     color_by_magnitude=False,
@@ -161,7 +169,7 @@ STREAM_LINES = m.StreamLines(
 FLOW = m.AnimatedStreamLines(STREAM_LINES)
 
 
-def mutli_variable_vector_valued_functions(s: MainTheatreScene) -> None:
+def vector_fields(s: MainTheatreScene) -> None:
     header = build_header()
     formula = build_formula()
     probe = build_probe(PLANE)
@@ -188,7 +196,7 @@ def mutli_variable_vector_valued_functions(s: MainTheatreScene) -> None:
     def grow_vectors(mob):
         mob.update_vectors()
         points = mob.get_points()
-        bases = np.repeat(mob.sample_points, 8, axis=0)[:len(points)]
+        bases = np.repeat(mob.sample_points, 8, axis=0)[: len(points)]
         points[:] = bases + grow.get_value() * (points - bases)
         mob.note_changed_data()
 

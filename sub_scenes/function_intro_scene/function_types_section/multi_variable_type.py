@@ -39,7 +39,7 @@ examples = [
         # direction and speed, so the height at every point keeps changing.
         "name": "Ocean waves",
         "description": "The sea is a sum of traveling waves — swell, a crossing sea, and ripples",
-        "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $Z$ : wave height",
+        "legend": r"$x, y$ : position at sea $\quad$ $t$ : time $\quad$ $z$ : wave height",
         "mapping": r"a vector $(x, y, t) \in \mathbb{R}^3$ maps to a single scalar $z \in \mathbb{R}$",
         "func": lambda x, y, t: (
             0.50 * np.sin(1.0 * x + 0.6 * y - 1.2 * t)
