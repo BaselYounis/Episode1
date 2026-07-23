@@ -473,7 +473,7 @@ STREAM_LINES = InteriorStreamLines(
     # once the field dims, the flow reads as one moving fluid instead of a second
     # copy of the speed key.
     color_by_magnitude=False,
-    stroke_color="#00FFFF",
+    stroke_color="#F7FAFA",
     magnitude_range=(0, 1.0),
     stroke_opacity=0.9,
 )
