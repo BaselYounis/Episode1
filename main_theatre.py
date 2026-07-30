@@ -25,5 +25,5 @@ class MainTheatreScene(manim.Scene):
         self.presenter_mode = True
         self.add(main_background)
         # introduction_scene(self)
-        function_intro_scene(self)
+        # function_intro_scene(self)
         function_approx_scene(self)
