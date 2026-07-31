@@ -4,8 +4,9 @@ that lands on a closed form.
 Worked through the classic example — where is a ball thrown into the air? —
 from F = m_B a all the way down to p = 1/2 g t^2 + v_0 t + p_0.
 
-Layout: the derivation stacks in a column on the left and a ball-and-Earth
-diagram lives in a panel on the right.
+Layout: the derivation stacks in a column on the left and a panel on the right
+holds the ball-and-Earth diagram, which gives way at the end to a graph of the
+formula being read at one chosen instant.
 """
 
 from __future__ import annotations
@@ -51,13 +52,20 @@ BALL_HIGH = EARTH_R + 1.15  # distance from Earth's centre at h = H_MAX
 H_MAX = 20.0  # metres — the ball's greatest height
 R_EARTH_KM = 6371.0  # the constant that height is dwarfed by
 
-# ---- the payoff trajectory ----
-# Sized to fill the right panel once the Earth diagram has cleared out.
-T_MAX = 2.0
-VX_VIS = 2.0
-V0_VIS = 4.2
-G_VIS = 4.2
-LAUNCH_ORIGIN = np.array([PANEL_X - 2.3, -2.4, 0.0])
+# ---- the payoff graph ----
+# One particular throw, fed straight into the formula the derivation lands on.
+# g keeps its minus sign — the formula is p = 1/2 g t^2 + ..., so gravity has to
+# enter as a downward acceleration. The other two are picked so the readout at
+# T_PROBE still lands on an exact figure, which is what makes it legible.
+G_NUM = -9.8  # m/s^2, pointing down
+V0_NUM = 12.0  # m/s
+P0_NUM = 1.0  # m
+T_PROBE = 2.0  # the instant we ask the function about
+P_PROBE = 5.4  # ...and the height it answers with
+
+GRAPH_CENTER = np.array([PANEL_X + 0.15, -0.35, 0.0])
+GRAPH_WIDTH = 4.8
+GRAPH_HEIGHT = 3.5
 
 
 # =============================== builders ===============================
@@ -222,46 +230,108 @@ def extend_arrow(arrow: m.Arrow, start: np.ndarray, end: np.ndarray, **kwargs):
     return m.UpdateFromAlphaFunc(arrow, lay_out, **kwargs)
 
 
-def trajectory_point(t: float) -> np.ndarray:
-    """p(t) for the closing animation, in scene coordinates."""
-    return (
-        LAUNCH_ORIGIN
-        + m.RIGHT * (VX_VIS * t)
-        + m.UP * (V0_VIS * t - 0.5 * G_VIS * t * t)
+def height_at(t: float) -> float:
+    """The formula the derivation just landed on, with one throw's numbers in."""
+    return 0.5 * G_NUM * t * t + V0_NUM * t + P0_NUM
+
+
+# When the ball comes back down to p = 0 — the far end of the curve.
+T_LAND = float((-V0_NUM - np.sqrt(V0_NUM**2 - 2 * G_NUM * P0_NUM)) / G_NUM)
+
+
+def build_graph_panel() -> dict:
+    """The payoff: p(t) plotted, then interrogated at one instant.
+
+    The point is not the parabola — it is that picking a t and reading the
+    curve hands back the ball's height without ever throwing the ball.
+    """
+    axes = m.Axes(
+        # Out to 3 s so the last tick clears T_LAND ≈ 2.53 and the curve lands
+        # on the axis rather than running out through the arrowhead.
+        x_range=[0, 3, 0.5],
+        y_range=[0, 9, 2],
+        width=GRAPH_WIDTH,
+        height=GRAPH_HEIGHT,
+        axis_config=dict(
+            include_tip=True,
+            tip_config=dict(width=0.12, length=0.12),
+        ),
     )
+    axes.move_to(GRAPH_CENTER)
 
+    # add_numbers parents the digits to the axis, so ShowCreation(axes) would
+    # stroke-draw them stroke-by-stroke along with the lines. Lift them back out
+    # and fade them in as their own group instead.
+    x_numbers = axes.x_axis.add_numbers(
+        np.arange(0.5, 3.1, 0.5), num_decimal_places=1, font_size=16
+    )
+    y_numbers = axes.y_axis.add_numbers(
+        np.arange(2, 9, 2), num_decimal_places=0, font_size=16
+    )
+    axes.x_axis.remove(x_numbers)
+    axes.y_axis.remove(y_numbers)
+    numbers = m.VGroup(x_numbers, y_numbers)
+    numbers.set_color(m.GREY_A)
 
-def build_trajectory(t_tracker: m.ValueTracker) -> dict:
-    """The payoff: the formula finally drawn as a path through the air."""
-    ground = m.Line(LAUNCH_ORIGIN + m.LEFT * 0.7, LAUNCH_ORIGIN + m.RIGHT * 4.6)
-    ground.set_stroke(m.GREY_B, width=2)
+    x_axis_label = m.Text("t (s)", font=FONT, font_size=20).set_color(m.GREY_A)
+    x_axis_label.next_to(axes.x_axis.get_end(), m.DR, buff=0.12)
+    y_axis_label = m.Text("p (m)", font=FONT, font_size=20).set_color(MOTION_COLOR)
+    y_axis_label.next_to(axes.y_axis.get_end(), m.UL, buff=0.1)
 
-    # The curve the formula predicts, shown faintly before the ball sets off.
-    full_path = m.ParametricCurve(trajectory_point, t_range=(0.0, T_MAX, T_MAX / 200))
-    full_path.set_stroke(m.GREY_B, width=1.5, opacity=0.45)
+    graph = axes.get_graph(height_at, x_range=(0.0, T_LAND, 0.02))
+    graph.set_stroke(MOTION_COLOR, width=3)
 
-    trace = full_path.copy()
-    trace.set_stroke(MOTION_COLOR, width=4)
+    # ---- the probe: one chosen t, read across to one height ----
+    base = axes.c2p(T_PROBE, 0)  # the input, on the t-axis
+    top = axes.c2p(T_PROBE, P_PROBE)  # where it lands on the curve
+    out = axes.c2p(0, P_PROBE)  # the output, on the p-axis
 
-    def grow_trace(mob: m.VMobject) -> None:
-        alpha = min(max(t_tracker.get_value() / T_MAX, 1e-4), 1.0)
-        mob.pointwise_become_partial(full_path, 0, alpha)
-        mob.set_stroke(MOTION_COLOR, width=4)
+    t_dot = m.Dot(base, radius=0.055).set_color(m.GREY_A)
+    t_label = m.Tex(r"t = 2\,\mathrm{s}", font_size=24).set_color(m.GREY_A)
+    # Clear of the tick numbers, which already sit just under the axis here.
+    t_label.next_to(base, m.DOWN, buff=0.45)
 
-    trace.add_updater(grow_trace)
+    riser = m.DashedLine(base, top, dash_length=0.1)
+    riser.set_stroke(m.GREY_A, width=2, opacity=0.9)
 
-    ball = m.Dot(radius=0.11).set_color(BALL_COLOR)
-    ball.add_updater(lambda mob: mob.move_to(trajectory_point(t_tracker.get_value())))
+    ball = m.Dot(top, radius=0.09).set_color(BALL_COLOR)
+    ball.set_stroke(m.WHITE, width=1)
 
-    for mob in (trace, ball):
-        mob.update()
+    crossbar = m.DashedLine(top, out, dash_length=0.1)
+    crossbar.set_stroke(MOTION_COLOR, width=2, opacity=0.9)
+
+    p_dot = m.Dot(out, radius=0.06).set_color(MOTION_COLOR)
+    p_label = m.Tex(r"p = 5.4\,\mathrm{m}", font_size=24).set_color(MOTION_COLOR)
+    # Inside the arc: the curve is well above the crossbar across its middle.
+    p_label.next_to(crossbar, m.UP, buff=0.1)
 
     return dict(
-        ground=ground,
-        full_path=full_path,
-        trace=trace,
+        axes=axes,
+        numbers=numbers,
+        x_axis_label=x_axis_label,
+        y_axis_label=y_axis_label,
+        graph=graph,
+        t_dot=t_dot,
+        t_label=t_label,
+        riser=riser,
         ball=ball,
-        group=m.VGroup(ground, full_path, trace, ball),
+        crossbar=crossbar,
+        p_dot=p_dot,
+        p_label=p_label,
+        group=m.VGroup(
+            axes,
+            numbers,
+            x_axis_label,
+            y_axis_label,
+            graph,
+            t_dot,
+            t_label,
+            riser,
+            ball,
+            crossbar,
+            p_dot,
+            p_label,
+        ),
     )
 
 
@@ -612,32 +682,90 @@ def ball_thrown_section(s: MainTheatreScene) -> None:
     s.wait_for_button()
 
     # ---------------- 10. the payoff ----------------
+    # The formula is general; make it concrete by fixing one throw's numbers,
+    # then ask it a question it could not be asked before: where is the ball at
+    # t = 2 s? The diagram has nothing left to say, so it clears out and the
+    # graph takes the panel.
     for key in ("ball", "ball_label", "force_arrow", "force_label"):
         diagram[key].clear_updaters()
 
-    t_tracker = m.ValueTracker(0.0)
-    trajectory = build_trajectory(t_tracker)
+    givens_caption = m.Text("for one particular throw:", font=FONT, font_size=18)
+    givens_caption.set_color(m.GREY_B)
+    place_below(givens_caption, eq_position)
+
+    givens = build_equation(
+        r"g = -9.8 \quad v_0 = 12 \quad p_0 = 1",
+        {"g": CONST_COLOR, "v_0": INIT_COLOR, "p_0": INIT_COLOR},
+        font_size=26,
+    )
+    place_below(givens, givens_caption)
 
     s.play(m.FadeOut(diagram["group"]), run_time=0.8)
     s.play(
-        m.ShowCreation(trajectory["ground"]),
-        m.ShowCreation(trajectory["full_path"]),
-        m.FadeIn(trajectory["ball"], scale=0.5),
+        m.FadeIn(givens_caption, shift=m.UP * 0.3),
+        m.FadeIn(givens, shift=m.UP * 0.3),
         run_time=0.9,
     )
-    # The trace has an updater that paints it in as t advances, so it only needs
-    # to be present in the scene — never animated in. Re-adding the ball keeps
-    # it drawn on top of the line it is leaving behind.
-    s.add(trajectory["trace"], trajectory["ball"])
-    s.wait_for_button("Press SPACE to launch ")
+    s.wait_for_button()
+
+    graph_panel = build_graph_panel()
 
     s.play(
-        t_tracker.animate.set_value(T_MAX),
-        run_time=3.0,
-        rate_func=m.linear,
+        m.ShowCreation(graph_panel["axes"]),
+        m.FadeIn(graph_panel["numbers"]),
+        m.FadeIn(graph_panel["x_axis_label"]),
+        m.FadeIn(graph_panel["y_axis_label"]),
+        run_time=1.2,
     )
-    trajectory["trace"].clear_updaters()
-    trajectory["ball"].clear_updaters()
+    s.wait_for_button()
+
+    s.play(m.ShowCreation(graph_panel["graph"]), run_time=1.6)
+    s.wait_for_button()
+
+    # Pick a time...
+    s.play(
+        m.FadeIn(graph_panel["t_dot"], scale=0.5),
+        m.Write(graph_panel["t_label"]),
+        run_time=0.7,
+    )
+    s.wait_for_button()
+
+    # ...climb to the curve...
+    s.play(
+        m.ShowCreation(graph_panel["riser"]),
+        m.FadeIn(graph_panel["ball"], scale=0.5),
+        run_time=0.9,
+    )
+    s.wait_for_button()
+
+    # ...and read the height straight off the other axis. The crossbar starts on
+    # the ball, so re-adding the ball afterwards keeps it drawn on top of the
+    # dashes rather than half-buried under them.
+    s.play(m.ShowCreation(graph_panel["crossbar"]), run_time=0.8)
+    s.add(graph_panel["ball"])
+    s.play(
+        m.FadeIn(graph_panel["p_dot"], scale=0.5),
+        m.Write(graph_panel["p_label"]),
+        run_time=0.7,
+    )
+    s.wait_for_button()
+
+    # The same answer the long way round: the parentheses are what keep each
+    # value isolatable, since a bare "1" also lives inside \frac{1}{2} and 12.
+    evaluation = build_equation(
+        r"p(2) = \frac{1}{2}(-9.8)(2)^{2} + (12)(2) + (1) = 5.4",
+        {
+            "p": MOTION_COLOR,
+            "(-9.8)": CONST_COLOR,
+            "(12)": INIT_COLOR,
+            "(1)": INIT_COLOR,
+        },
+        font_size=24,
+    )
+    place_below(evaluation, givens)
+
+    s.play(m.FadeIn(evaluation, shift=m.UP * 0.3), run_time=0.9)
+    s.play(m.FlashAround(graph_panel["p_label"]), run_time=1.0)
     s.wait_for_button()
 
     # ---------------- tear down ----------------
@@ -645,10 +773,13 @@ def ball_thrown_section(s: MainTheatreScene) -> None:
         m.FadeOut(
             m.VGroup(
                 heading,
-                eq_g,
+               eq_g,
                 eq_velocity,
                 eq_position,
-                trajectory["group"],
+                givens_caption,
+                givens,
+                evaluation,
+                graph_panel["group"],
             )
         ),
         run_time=0.6,
