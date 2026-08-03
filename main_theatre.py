@@ -11,6 +11,7 @@ from helper_animated_objects.general_objects import main_background
 from sub_scenes.function_intro_scene.scene import function_intro_scene
 from sub_scenes.function_approx_scene.scene import function_approx_scene
 
+
 class MainTheatreScene(manim.Scene):
     def wait_for_button(self, message: str = "Press SPACE to continue ") -> None:
         prompt = manim.Text(message, font_size=24)

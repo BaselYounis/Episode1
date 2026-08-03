@@ -305,6 +305,12 @@ def build_graph_panel() -> dict:
     # Inside the arc: the curve is well above the crossbar across its middle.
     p_label.next_to(crossbar, m.UP, buff=0.1)
 
+    # Two halves, because they have different lifetimes. The probe answers one
+    # question and is done; the axes and the curve outlive this section and are
+    # handed on to the one that follows.
+    curve_group = m.VGroup(axes, numbers, x_axis_label, y_axis_label, graph)
+    probe_group = m.VGroup(t_dot, t_label, riser, ball, crossbar, p_dot, p_label)
+
     return dict(
         axes=axes,
         numbers=numbers,
@@ -318,20 +324,9 @@ def build_graph_panel() -> dict:
         crossbar=crossbar,
         p_dot=p_dot,
         p_label=p_label,
-        group=m.VGroup(
-            axes,
-            numbers,
-            x_axis_label,
-            y_axis_label,
-            graph,
-            t_dot,
-            t_label,
-            riser,
-            ball,
-            crossbar,
-            p_dot,
-            p_label,
-        ),
+        curve_group=curve_group,
+        probe_group=probe_group,
+        group=m.VGroup(curve_group, probe_group),
     )
 
 
@@ -360,7 +355,9 @@ def matched_pairs(source: m.Tex, target: m.Tex, keys: list) -> list:
 # =============================== the section ===============================
 
 
-def ball_thrown_section(s: MainTheatreScene) -> None:
+def ball_thrown_section(s: MainTheatreScene) -> dict:
+    """Returns the graph panel, with the axes and curve still on screen — the
+    next section keeps interrogating that same graph."""
     # ---------------- 0. the framing ----------------
     two_ways = m.Text(
         "There are two ways to find the function", font=FONT, font_size=36
@@ -769,18 +766,23 @@ def ball_thrown_section(s: MainTheatreScene) -> None:
     s.wait_for_button()
 
     # ---------------- tear down ----------------
+    # The axes and the curve stay: the next section takes the same graph, moves
+    # it to centre stage and starts measuring it. Only the probe goes, having
+    # already answered its one question.
     s.play(
         m.FadeOut(
             m.VGroup(
                 heading,
-               eq_g,
+                eq_g,
                 eq_velocity,
                 eq_position,
                 givens_caption,
                 givens,
                 evaluation,
-                graph_panel["group"],
+                graph_panel["probe_group"],
             )
         ),
         run_time=0.6,
     )
+
+    return graph_panel
