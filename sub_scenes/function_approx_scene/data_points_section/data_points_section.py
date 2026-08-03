@@ -5,10 +5,12 @@ the physics to start from. Strip that away and all that is left of the ball is
 what you can measure — a handful of heights, each one off by a little. This
 section takes the very graph the derivation just drew, moves it to centre
 stage, scatters those measurements over it, and then dims the curve away, so
-the closing image is the one function approximation actually starts from: dots,
+what is left is the one thing function approximation actually starts from: dots,
 and no curve.
 
-It sets the question up; it does not answer it.
+It closes by naming the new goal. The real function is not on the table any
+more, so the search is for one that runs close to the dots instead — and when
+the true curve is brought back to check, the fit is beside it, not on it.
 """
 
 from __future__ import annotations
@@ -17,11 +19,10 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from helpers import mixed_tex_parser
-
 from ..ball_thrown_section.ball_thrown_section import (
     BALL_COLOR,
     FONT,
+    MOTION_COLOR,
     height_at,
 )
 
@@ -32,11 +33,10 @@ import manimlib as m
 
 # ---- staging ----
 # The graph arrives from the right-hand panel and takes the whole stage. 1.4x
-# leaves a clear band above the axes for the running commentary.
+# leaves a clear band above the axes for the section heading.
 SCALE_UP = 1.4
 STAGE_CENTER = np.array([0.0, -0.7, 0.0])
-PROSE_Y = 3.05
-PROSE_FONT_SIZE = 26
+HEADING_Y = 3.05
 
 # ---- the measurements ----
 # Sampled inside T_LAND = 2.53, over a stretch where the true curve never drops
@@ -49,8 +49,8 @@ P_FLOOR, P_CEILING = 0.2, 8.6
 
 # Drawn once, at import, from a fixed seed: the scatter has to be identical on
 # every render or the scene changes between takes. This particular seed gives a
-# spread with no dot escaping the plot box and a clearly visible — but not
-# freakish — error on the point singled out at BELL_INDEX.
+# spread with no dot escaping the plot box and errors that read clearly without
+# any of them looking freakish.
 SEED = 8
 T_VALUES = np.linspace(T_MIN, T_MAX, N_POINTS)
 P_TRUE = height_at(T_VALUES)
@@ -62,12 +62,28 @@ P_NOISY = np.clip(
 
 DOT_RADIUS = 0.06
 GHOST_OPACITY = 0.15
+# The true curve comes back up this far at the end — enough to see the
+# approximation lying almost, but not quite, on top of it.
+COMPARE_OPACITY = 0.5
 
-# The one measurement whose error gets drawn out. On the way down, clear of both
-# the apex and the axis, so a full bell fits either side of it.
-BELL_INDEX = 9
-BELL_WIDTH = 0.35  # peak height of the bell, in seconds along the t-axis
-ANNOTATION_COLOR = m.GREY_A
+# ---- the approximation ----
+# The answer the section closes on: not p, but something near it. Fitted to the
+# noisy dots, since those are all the search ever gets to see — which is why it
+# lands beside the true curve rather than on it (visibly so at the left end,
+# where the first measurement came in low).
+FIT_COLOR = m.TEAL_B
+FIT_COEFFS = np.polyfit(T_VALUES, P_NOISY, 2)
+
+# Two candidates tried before it, so the fit reads as something searched for
+# rather than handed over. The line is the least-squares line — wrong shape.
+LINE_COEFFS = np.polyfit(T_VALUES, P_NOISY, 1)
+# Hand-picked: right shape, too sharp, and it hits the ground well before the
+# last measurements do. Drawn only to its own root, so it stays in the box.
+STEEP_COEFFS = np.array([-7.5, 16.0, 0.3])
+STEEP_T_END = float(max(np.roots(STEEP_COEFFS)))
+
+FIT_T_RANGE = (0.0, 2.53, 0.02)
+RESIDUAL_COLOR = m.GREY_B
 
 
 # =============================== builders ===============================
@@ -96,59 +112,54 @@ def build_measurements(axes: m.Axes) -> dict:
     return dict(dots=dots, noisy_points=noisy_points)
 
 
-def build_error_bell(axes: m.Axes) -> dict:
-    """A bell lying on its side at one measurement, so "Gaussian" is shown
-    rather than asserted, plus the segment between where the ball actually was
-    and where we recorded it."""
-    t0 = T_VALUES[BELL_INDEX]
-    p0 = P_TRUE[BELL_INDEX]
+def build_approximation(axes: m.Axes) -> dict:
+    """The candidates, the fit, and the gap that is left over.
 
-    def bell_point(p: float) -> np.ndarray:
-        offset = BELL_WIDTH * np.exp(-((p - p0) ** 2) / (2 * SIGMA_P**2))
-        return axes.c2p(t0 + offset, p)
+    Same rule as build_measurements: call it after the axes have been staged.
+    """
 
-    bell = m.ParametricCurve(
-        bell_point,
-        t_range=(p0 - 3.2 * SIGMA_P, p0 + 3.2 * SIGMA_P, 0.05),
-    )
-    bell.set_stroke(ANNOTATION_COLOR, width=2)
-    # An open curve fills as if closed, and the closing chord here runs straight
-    # down the t = t0 line — exactly the baseline a bell should sit on. Without
-    # the fill the outline reads as a bracket rather than a distribution.
-    bell.set_fill(ANNOTATION_COLOR, opacity=0.12)
+    def curve(coeffs: np.ndarray, t_range: tuple) -> m.VMobject:
+        graph = axes.get_graph(lambda t: float(np.polyval(coeffs, t)), x_range=t_range)
+        graph.set_stroke(FIT_COLOR, width=3)
+        return graph
 
-    # Where the ball actually was, as opposed to what we wrote down.
-    true_marker = m.Circle(radius=0.07)
-    true_marker.move_to(axes.c2p(t0, p0))
-    true_marker.set_stroke(ANNOTATION_COLOR, width=2)
-    true_marker.set_fill(opacity=0)
+    # The one that gets transformed along the search; the other two are only
+    # ever Transform targets, so they never enter the scene themselves.
+    candidate = curve(LINE_COEFFS, FIT_T_RANGE)
+    steep = curve(STEEP_COEFFS, (0.0, STEEP_T_END, 0.02))
+    fit = curve(FIT_COEFFS, FIT_T_RANGE)
 
-    error_bar = m.DashedLine(
-        axes.c2p(t0, p0),
-        axes.c2p(t0, P_NOISY[BELL_INDEX]),
-        dash_length=0.05,
-    )
-    error_bar.set_stroke(ANNOTATION_COLOR, width=3)
+    # What "close" costs, per measurement: the leftover between the dot and the
+    # curve the search settled on.
+    residuals = m.VGroup()
+    for t, p in zip(T_VALUES, P_NOISY):
+        segment = m.Line(axes.c2p(t, p), axes.c2p(t, float(np.polyval(FIT_COEFFS, t))))
+        segment.set_stroke(RESIDUAL_COLOR, width=2)
+        residuals.add(segment)
 
-    sigma_label = m.Tex(r"\sigma", font_size=26).set_color(ANNOTATION_COLOR)
-    sigma_label.next_to(bell, m.RIGHT, buff=0.12)
-
-    return dict(
-        bell=bell,
-        true_marker=true_marker,
-        error_bar=error_bar,
-        sigma_label=sigma_label,
-        group=m.VGroup(bell, true_marker, error_bar, sigma_label),
-    )
+    return dict(candidate=candidate, steep=steep, fit=fit, residuals=residuals)
 
 
-def build_prose(text: str) -> m.VGroup:
-    """A line of commentary in the band above the axes."""
-    prose = mixed_tex_parser.convert_tex_to_vgroup(
-        text, font=FONT, font_size=PROSE_FONT_SIZE
-    )
-    prose.move_to(np.array([0.0, PROSE_Y, 0.0]))
-    return prose
+def build_legend(axes: m.Axes) -> m.VGroup:
+    """Which curve is which, in the empty corner above the rising branch.
+
+    Nothing but the two symbols: the real function we never get, and the one we
+    settle for.
+    """
+    rows = m.VGroup()
+    for color, opacity, tex in (
+        (MOTION_COLOR, COMPARE_OPACITY, "p(t)"),
+        (FIT_COLOR, 1.0, r"\hat p(t)"),
+    ):
+        swatch = m.Line(m.LEFT * 0.16, m.RIGHT * 0.16)
+        swatch.set_stroke(color, width=3, opacity=opacity)
+        label = m.Tex(tex, font_size=24).set_color(color)
+        label.set_opacity(opacity)
+        rows.add(m.VGroup(swatch, label).arrange(m.RIGHT, buff=0.14))
+
+    rows.arrange(m.DOWN, buff=0.18, aligned_edge=m.LEFT)
+    rows.move_to(axes.c2p(0.12, 8.7), aligned_edge=m.UL)
+    return rows
 
 
 # =============================== the section ===============================
@@ -169,34 +180,19 @@ def data_points_section(s: MainTheatreScene, graph_panel: dict) -> None:
     s.play(m.Transform(curve_group, stage_target), run_time=1.2)
     s.wait_for_button()
 
-    # ---------------- 2. the catch ----------------
-    prose = build_prose(
-        "that only worked because we already knew the physics"
-        r"\nd"
-        "usually, all we can do is measure"
-    )
-    s.play(m.FadeIn(prose, shift=m.UP * 0.25), run_time=0.9)
-    s.wait_for_button()
-
-    # ---------------- 3. the measurements, taken perfectly ----------------
+    # ---------------- 2. the measurements, taken perfectly ----------------
     measurements = build_measurements(axes)
     dots = measurements["dots"]
 
-    prose_measure = build_prose(
-        r"at each instant $t$, we record the ball's height $p$"
-    )
-    s.play(m.FadeTransform(prose, prose_measure), run_time=0.8)
     s.play(
         m.LaggedStartMap(m.FadeIn, dots, scale=0.4, lag_ratio=0.06, run_time=1.4)
     )
     s.wait_for_button()
 
-    # ---------------- 4. ...except no measurement is perfect ----------------
+    # ---------------- 3. ...except no measurement is perfect ----------------
     # The cascade off the curve is the error. Each dot carries its own draw from
     # a normal distribution, so the scatter widens without any of it being
     # arranged by hand.
-    prose_error = build_prose("but every measurement carries error")
-    s.play(m.FadeTransform(prose_measure, prose_error), run_time=0.8)
     s.play(
         m.AnimationGroup(
             *(
@@ -209,46 +205,68 @@ def data_points_section(s: MainTheatreScene, graph_panel: dict) -> None:
     )
     s.wait_for_button()
 
-    # Name the distribution on one of them, while the true curve is still there
-    # to measure the error against.
-    bell = build_error_bell(axes)
-    s.play(
-        m.ShowCreation(bell["true_marker"]),
-        m.ShowCreation(bell["error_bar"]),
-        run_time=0.8,
-    )
-    s.play(
-        m.ShowCreation(bell["bell"]),
-        m.FadeIn(bell["sigma_label"]),
-        run_time=1.1,
-    )
-    s.wait_for_button()
-
-    # ---------------- 5. take the curve away ----------------
+    # ---------------- 4. take the curve away ----------------
     # The whole point: the parabola was never on offer. Dimming it rather than
     # cutting it leaves a ghost, so it is legible that the dots are still
     # gathered around something — we just do not have it.
-    prose_gone = build_prose("and the curve was never given to us — only the dots")
     s.play(
-        m.FadeOut(bell["group"]),
-        m.FadeTransform(prose_error, prose_gone),
         graph_panel["graph"].animate.set_stroke(opacity=GHOST_OPACITY),
         run_time=1.4,
     )
     s.wait_for_button()
 
-    # ---------------- 6. name the second way ----------------
+    # ---------------- 5. name the second way ----------------
     heading = m.Text(
         "2 — Approximating the function from data",
         font=FONT,
         font_size=30,
     )
-    heading.move_to(np.array([0.0, PROSE_Y, 0.0]))
-    s.play(m.FadeTransform(prose_gone, heading), run_time=1.0)
+    heading.move_to(np.array([0.0, HEADING_Y, 0.0]))
+    s.play(m.FadeIn(heading, shift=m.UP * 0.25), run_time=1.0)
+    s.wait_for_button()
+
+    # ---------------- 6. what we go looking for instead ----------------
+    # Not p — that one is gone with the physics. Something we can build out of
+    # the dots and then check against them. The search is shown as a search: two
+    # candidates that miss before the one that does not.
+    approx = build_approximation(axes)
+    candidate = approx["candidate"]
+    s.play(m.ShowCreation(candidate), run_time=1.0)
+    s.wait_for_button()
+
+    s.play(m.Transform(candidate, approx["steep"]), run_time=0.9)
+    s.play(m.Transform(candidate, approx["fit"]), run_time=1.1)
+    s.wait_for_button()
+
+    # It threads the dots, but it does not hit them — and it was never asked to.
+    # The residuals are what "close" means here, and they are what any of this
+    # can actually be measured against.
+    s.play(
+        m.LaggedStartMap(m.ShowCreation, approx["residuals"], lag_ratio=0.06),
+        run_time=1.2,
+    )
+    s.wait_for_button()
+
+    # Bring the true curve back up to see the whole point: the fit is beside it,
+    # not on it — and it got there without ever being shown it.
+    legend = build_legend(axes)
+    s.play(
+        m.FadeOut(approx["residuals"]),
+        graph_panel["graph"].animate.set_stroke(opacity=COMPARE_OPACITY),
+        m.FadeIn(legend),
+        run_time=1.2,
+    )
+    s.wait_for_button()
+
+    closeness = m.Tex(r"\hat p(t) \approx p(t)", font_size=30)
+    closeness.set_color(FIT_COLOR)
+    closeness.move_to(axes.c2p(2.45, 8.0))
+    s.play(m.Write(closeness), run_time=1.0)
+    s.play(m.FlashAround(closeness), run_time=1.0)
     s.wait_for_button()
 
     # ---------------- tear down ----------------
     s.play(
-        m.FadeOut(m.VGroup(heading, dots, curve_group)),
+        m.FadeOut(m.VGroup(heading, dots, curve_group, candidate, legend, closeness)),
         run_time=0.6,
     )
